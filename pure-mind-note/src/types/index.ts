@@ -47,9 +47,15 @@ export interface SubCategory {
   parentId: string;
 }
 
+// 用户配置类型
+export interface UserConfig {
+  workspacePath: string;
+}
+
 // 应用状态类型
 export interface AppState {
   categories: Category[];
   activeNote: NoteMetadata | null;
   notes: NoteMetadata[];
+  userConfig: UserConfig;
 } 

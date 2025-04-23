@@ -1,16 +1,21 @@
 import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
-import { AppState, NoteMetadata, Category, MindMapData } from '../types';
+import { AppState, NoteMetadata, Category, MindMapData, SubCategory, UserConfig } from '../types';
 import * as FileService from '../services/FileService';
 
 // 创建默认状态
 const defaultState: AppState = {
   categories: [],
   activeNote: null,
-  notes: []
+  notes: [],
+  userConfig: {
+    workspacePath: '' // 默认为空，将在加载时从配置或本地存储中获取
+  }
 };
 
 // 创建上下文
 interface AppContextProps extends AppState {
+  loadWorkspace: () => Promise<void>;
+  loadCategories: () => Promise<void>;
   loadNotes: () => Promise<void>;
   createNewNote: (title: string, categoryId: string, subCategoryId?: string) => Promise<void>;
   openNote: (noteId: string) => Promise<void>;
@@ -19,6 +24,7 @@ interface AppContextProps extends AppState {
   createNewSubcategory: (categoryId: string, name: string) => Promise<void>;
   setActiveNoteData: (data: MindMapData) => void;
   activeNoteData: MindMapData | null;
+  updateUserConfig: (config: Partial<UserConfig>) => Promise<void>;
 }
 
 const AppContext = createContext<AppContextProps | undefined>(undefined);
@@ -28,58 +34,114 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   // 状态
   const [state, setState] = useState<AppState>(defaultState);
   const [activeNoteData, setActiveNoteData] = useState<MindMapData | null>(null);
+  const [workspaceReady, setWorkspaceReady] = useState<boolean>(false);
 
-  // 初始化时加载笔记列表
+  // 初始化工作区
   useEffect(() => {
-    loadNotes();
+    loadUserConfig().then(() => {
+      loadWorkspace();
+    });
   }, []);
 
-  // 处理从笔记列表构建分类树
-  const buildCategoryTree = (notes: NoteMetadata[]): Category[] => {
-    const categoryMap = new Map<string, Category>();
-    
-    // 遍历所有笔记，构建分类Map
-    notes.forEach(note => {
-      if (!categoryMap.has(note.categoryId)) {
-        categoryMap.set(note.categoryId, {
-          id: note.categoryId,
-          name: note.categoryId, // 使用分类ID作为名称
-          subCategories: []
-        });
+  // 当工作区准备好后，加载分类
+  useEffect(() => {
+    if (workspaceReady) {
+      loadCategories();
+    }
+  }, [workspaceReady]);
+
+  // 分类加载后，加载笔记
+  useEffect(() => {
+    if (state.categories.length > 0) {
+      loadNotes();
+    }
+  }, [state.categories]);
+
+  // 加载用户配置
+  const loadUserConfig = async (): Promise<void> => {
+    try {
+      // 从本地存储获取配置
+      const storedConfig = localStorage.getItem('userConfig');
+      if (storedConfig) {
+        const parsedConfig = JSON.parse(storedConfig) as UserConfig;
+        setState(prevState => ({
+          ...prevState,
+          userConfig: parsedConfig
+        }));
+        console.log('用户配置加载完成:', parsedConfig);
+      }
+    } catch (error) {
+      console.error('加载用户配置失败:', error);
+    }
+  };
+  
+  // 更新用户配置
+  const updateUserConfig = async (config: Partial<UserConfig>): Promise<void> => {
+    try {
+      const newConfig = { ...state.userConfig, ...config };
+      
+      // 保存到本地存储
+      localStorage.setItem('userConfig', JSON.stringify(newConfig));
+      
+      // 更新状态
+      setState(prevState => ({
+        ...prevState,
+        userConfig: newConfig
+      }));
+      
+      // 如果工作区路径更改，重新加载工作区
+      if (config.workspacePath !== undefined && config.workspacePath !== state.userConfig.workspacePath) {
+        await loadWorkspace();
       }
       
-      // 如果有子分类
-      if (note.subCategoryId) {
-        const category = categoryMap.get(note.categoryId);
-        if (category) {
-          // 检查子分类是否已存在
-          const subCategoryExists = category.subCategories.some(sub => sub.id === note.subCategoryId);
-          
-          if (!subCategoryExists && note.subCategoryId) {
-            category.subCategories.push({
-              id: note.subCategoryId,
-              name: note.subCategoryId, // 使用子分类ID作为名称
-              parentId: note.categoryId
-            });
-          }
-        }
-      }
-    });
-    
-    return Array.from(categoryMap.values());
+      console.log('用户配置更新完成:', newConfig);
+    } catch (error) {
+      console.error('更新用户配置失败:', error);
+    }
+  };
+
+  // 初始化工作区
+  const loadWorkspace = async (): Promise<void> => {
+    try {
+      // 初始化应用数据目录，确保工作区存在
+      await FileService.initializeWorkspace(state.userConfig.workspacePath);
+      setWorkspaceReady(true);
+      console.log('工作区初始化完成');
+    } catch (error) {
+      console.error('工作区初始化失败:', error);
+    }
+  };
+
+  // 加载分类和子分类
+  const loadCategories = async (): Promise<void> => {
+    try {
+      // 获取所有分类
+      const categories = await FileService.getAllCategories();
+      
+      // 更新状态
+      setState(prevState => ({
+        ...prevState,
+        categories
+      }));
+      
+      console.log('分类加载完成:', categories);
+    } catch (error) {
+      console.error('加载分类失败:', error);
+    }
   };
   
   // 加载所有笔记
   const loadNotes = async (): Promise<void> => {
     try {
+      // 获取所有笔记
       const notes = await FileService.getAllNotes();
-      const categories = buildCategoryTree(notes);
       
       setState(prevState => ({
         ...prevState,
-        notes,
-        categories
+        notes
       }));
+      
+      console.log('笔记加载完成:', notes);
     } catch (error) {
       console.error('加载笔记失败:', error);
     }
@@ -174,9 +236,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           subCategories: []
         }]
       }));
-      
-      // 重新加载笔记列表以更新分类
-      await loadNotes();
     } catch (error) {
       console.error('创建分类失败:', error);
     }
@@ -203,9 +262,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             : category
         )
       }));
-      
-      // 重新加载笔记列表以更新分类
-      await loadNotes();
     } catch (error) {
       console.error('创建子分类失败:', error);
     }
@@ -214,6 +270,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   // 上下文值
   const contextValue: AppContextProps = {
     ...state,
+    loadWorkspace,
+    loadCategories,
     loadNotes,
     createNewNote,
     openNote,
@@ -221,7 +279,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     createNewCategory,
     createNewSubcategory,
     activeNoteData,
-    setActiveNoteData
+    setActiveNoteData,
+    updateUserConfig
   };
   
   return (

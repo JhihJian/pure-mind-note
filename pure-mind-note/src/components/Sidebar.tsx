@@ -10,7 +10,9 @@ const Sidebar: React.FC = () => {
     createNewCategory,
     createNewSubcategory,
     createNewNote,
-    openNote
+    openNote,
+    userConfig,
+    updateUserConfig
   } = useAppContext();
   
   const [newCategoryName, setNewCategoryName] = useState('');
@@ -19,6 +21,8 @@ const Sidebar: React.FC = () => {
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [selectedSubCategoryId, setSelectedSubCategoryId] = useState<string | null>(null);
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
+  const [showSettings, setShowSettings] = useState(false);
+  const [workspacePath, setWorkspacePath] = useState(userConfig.workspacePath);
   
   // 切换分类折叠状态
   const toggleCategory = (categoryId: string) => {
@@ -69,6 +73,12 @@ const Sidebar: React.FC = () => {
     openNote(noteId);
   };
   
+  // 保存工作区配置
+  const saveWorkspacePath = () => {
+    updateUserConfig({ workspacePath });
+    setShowSettings(false);
+  };
+  
   // 获取指定分类和可能的子分类下的笔记
   const getFilteredNotes = (categoryId: string, subCategoryId?: string | null) => {
     return notes.filter(note => {
@@ -82,7 +92,30 @@ const Sidebar: React.FC = () => {
     <div className="sidebar">
       <div className="sidebar-header">
         <h2>脑图笔记本</h2>
+        <button 
+          className="settings-button" 
+          onClick={() => setShowSettings(!showSettings)}
+        >
+          ⚙️
+        </button>
       </div>
+      
+      {/* 设置面板 */}
+      {showSettings && (
+        <div className="settings-panel">
+          <h3>应用设置</h3>
+          <div className="setting-item">
+            <label>工作区路径:</label>
+            <input
+              type="text"
+              value={workspacePath}
+              onChange={(e) => setWorkspacePath(e.target.value)}
+              placeholder="输入自定义工作区路径"
+            />
+            <button onClick={saveWorkspacePath}>保存路径</button>
+          </div>
+        </div>
+      )}
       
       <div className="new-category">
         <input

@@ -11,6 +11,14 @@ pub fn run() {
       }
       Ok(())
     })
+    .invoke_handler(tauri::generate_handler![
+      crate::read_note,
+      crate::save_note,
+      crate::get_all_notes,
+      crate::get_all_categories,
+      crate::create_category,
+      crate::create_subcategory
+    ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
 }

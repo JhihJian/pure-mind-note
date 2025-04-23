@@ -5,7 +5,7 @@ use std::{fs, path::{Path, PathBuf}};
 use serde::{Deserialize, Serialize};
 use std::io::Write;
 
-// 定义我们的结构体
+// 定义笔记信息结构体
 #[derive(Debug, Serialize, Deserialize)]
 struct NoteInfo {
     id: String,
@@ -14,6 +14,22 @@ struct NoteInfo {
     category_id: String,
     sub_category_id: Option<String>,
     last_updated: String,
+}
+
+// 定义分类信息结构体
+#[derive(Debug, Serialize, Deserialize)]
+struct CategoryInfo {
+    id: String,
+    name: String,
+    sub_categories: Vec<SubCategoryInfo>,
+}
+
+// 定义子分类信息结构体
+#[derive(Debug, Serialize, Deserialize)]
+struct SubCategoryInfo {
+    id: String,
+    name: String,
+    parent_id: String,
 }
 
 // 读取笔记内容
@@ -134,6 +150,65 @@ fn get_all_notes(data_dir: String) -> Result<Vec<NoteInfo>, String> {
     Ok(notes)
 }
 
+// 获取所有分类
+#[tauri::command]
+fn get_all_categories(data_dir: String) -> Result<Vec<CategoryInfo>, String> {
+    let mut categories = Vec::new();
+    let base_path = PathBuf::from(&data_dir);
+    
+    // 确保数据目录存在
+    if !base_path.exists() {
+        fs::create_dir_all(&base_path).map_err(|e| format!("无法创建数据目录: {}", e))?;
+        return Ok(categories);
+    }
+    
+    // 遍历分类目录
+    for category_entry in fs::read_dir(&base_path).map_err(|e| format!("无法读取目录: {}", e))? {
+        if let Ok(category_dir) = category_entry {
+            let category_path = category_dir.path();
+            
+            // 确保这是一个目录
+            if category_path.is_dir() {
+                let category_id = category_path.file_name()
+                    .and_then(|name| name.to_str())
+                    .unwrap_or("unknown")
+                    .to_string();
+                
+                let mut sub_categories = Vec::new();
+                
+                // 遍历子分类目录
+                for subcategory_entry in fs::read_dir(&category_path).map_err(|e| format!("无法读取子目录: {}", e))? {
+                    if let Ok(subcategory_dir) = subcategory_entry {
+                        let subcategory_path = subcategory_dir.path();
+                        
+                        // 如果是目录，则为子分类
+                        if subcategory_path.is_dir() {
+                            let subcategory_id = subcategory_path.file_name()
+                                .and_then(|name| name.to_str())
+                                .unwrap_or("unknown")
+                                .to_string();
+                            
+                            sub_categories.push(SubCategoryInfo {
+                                id: subcategory_id.clone(),
+                                name: subcategory_id,
+                                parent_id: category_id.clone(),
+                            });
+                        }
+                    }
+                }
+                
+                categories.push(CategoryInfo {
+                    id: category_id.clone(),
+                    name: category_id,
+                    sub_categories,
+                });
+            }
+        }
+    }
+    
+    Ok(categories)
+}
+
 // 创建新分类
 #[tauri::command]
 fn create_category(data_dir: String, name: String) -> Result<String, String> {
@@ -156,16 +231,16 @@ fn create_subcategory(data_dir: String, category_id: String, name: String) -> Re
     Ok(subcategory_id)
 }
 
-// 主函数
+// Tauri 2.0 的handler实现，您需要根据实际app_lib.rs的内容进行调整
+#[cfg(not(test))]
 fn main() {
-    tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![
-            read_note,
-            save_note,
-            get_all_notes,
-            create_category,
-            create_subcategory
-        ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+    app_lib::run();
 }
+
+// 对于测试，我们需要提供一个空的main函数
+#[cfg(test)]
+fn main() {}
+
+// 引入测试模块，测试时使用
+#[cfg(test)]
+mod tests;

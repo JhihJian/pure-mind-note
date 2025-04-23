@@ -1,36 +1,125 @@
 /* src/components/Sidebar.css */
 .sidebar {
-    width: 250px; /* 设置侧边栏固定宽度 */
-    background-color: #f0f0f0; /* 背景色 */
-    padding: 15px;
-    overflow-y: auto; /* 内容过多时出现滚动条 */
-    border-right: 1px solid #ccc; /* 右边框 */
-    box-sizing: border-box; /* 内边距和边框包含在宽度内 */
-    flex-shrink: 0; /* 防止侧边栏缩小 */
-  }
-  
-  .sidebar h2 {
-    margin-top: 0;
-    font-size: 1.2em;
-    color: #333;
-  }
-  
-  .sidebar ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-  }
-  
-  .sidebar ul ul { /* 二级列表（笔记） */
-    padding-left: 20px; /* 缩进 */
-  }
-  
-  .sidebar li {
-    margin-bottom: 8px;
-    cursor: pointer; /* 表示可点击 */
-    padding: 4px 0;
-  }
-  
-  .sidebar li:hover {
-    color: #007bff; /* 鼠标悬停颜色变化 */
-  }
+  width: 280px;
+  height: 100%;
+  background-color: #f5f5f5;
+  border-right: 1px solid #ddd;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+}
+
+.sidebar-header {
+  margin-bottom: 20px;
+}
+
+.sidebar-header h2 {
+  margin: 0;
+  color: #333;
+  font-size: 1.5rem;
+}
+
+.new-category,
+.new-subcategory,
+.new-note {
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+.new-category input,
+.new-subcategory input,
+.new-note input {
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  margin-bottom: 8px;
+}
+
+.new-category button,
+.new-subcategory button,
+.new-note button {
+  padding: 8px;
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.new-category button:hover,
+.new-subcategory button:hover,
+.new-note button:hover {
+  background-color: #45a049;
+}
+
+.categories-list {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.category {
+  margin-bottom: 8px;
+}
+
+.category-item,
+.subcategory-item {
+  padding: 8px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+}
+
+.category-item {
+  font-weight: bold;
+}
+
+.category-item:hover,
+.subcategory-item:hover {
+  background-color: #e0e0e0;
+}
+
+.category-item.active,
+.subcategory-item.active {
+  background-color: #dcdcdc;
+}
+
+.category-toggle {
+  margin-right: 8px;
+  font-size: 0.8rem;
+}
+
+.subcategory {
+  margin-left: 20px;
+  margin-top: 4px;
+}
+
+.subcategory-item {
+  font-size: 0.95rem;
+}
+
+.notes-list {
+  margin-left: 20px;
+  margin-top: 4px;
+}
+
+.note-item {
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  font-size: 0.9rem;
+}
+
+.note-item:hover {
+  background-color: #e0e0e0;
+}
+
+.note-item.active {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+}

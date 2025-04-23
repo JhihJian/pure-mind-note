@@ -5,7 +5,7 @@
   "identifier": "com.dontChat.pure-mind-note",
   "build": {
     "frontendDist": "../dist",
-    "devUrl": "http://localhost:3000",
+    "devUrl": "http://localhost:5174",
     "beforeDevCommand": "npm run dev",
     "beforeBuildCommand": "npm run build"
   },

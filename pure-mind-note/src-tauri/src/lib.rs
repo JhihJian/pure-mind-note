@@ -1,3 +1,6 @@
+// 引入命令模块
+pub mod commands;
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
   tauri::Builder::default()
@@ -12,12 +15,12 @@ pub fn run() {
       Ok(())
     })
     .invoke_handler(tauri::generate_handler![
-      crate::read_note,
-      crate::save_note,
-      crate::get_all_notes,
-      crate::get_all_categories,
-      crate::create_category,
-      crate::create_subcategory
+      commands::read_note,
+      commands::save_note,
+      commands::get_all_notes,
+      commands::get_all_categories,
+      commands::create_category,
+      commands::create_subcategory
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");

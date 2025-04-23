@@ -1,0 +1,14 @@
+/* src/components/MindMapEditor.css */
+.mindmap-editor {
+    flex-grow: 1; /* 占据剩余空间 */
+    padding: 15px;
+    overflow: hidden; /* 防止思维导图溢出导致布局问题 */
+    position: relative; /* 如果思维导图库需要绝对定位的子元素，父元素需要相对定位 */
+    /* TODO: 将来的思维导图容器需要设置确定的高度和宽度，或者父容器提供 */
+  }
+  
+  /* 临时样式，方便看到区域 */
+  .mindmap-editor h2 {
+      margin-top: 0;
+      color: #555;
+  }

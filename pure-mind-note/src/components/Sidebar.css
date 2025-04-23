@@ -1,0 +1,36 @@
+/* src/components/Sidebar.css */
+.sidebar {
+    width: 250px; /* 设置侧边栏固定宽度 */
+    background-color: #f0f0f0; /* 背景色 */
+    padding: 15px;
+    overflow-y: auto; /* 内容过多时出现滚动条 */
+    border-right: 1px solid #ccc; /* 右边框 */
+    box-sizing: border-box; /* 内边距和边框包含在宽度内 */
+    flex-shrink: 0; /* 防止侧边栏缩小 */
+  }
+  
+  .sidebar h2 {
+    margin-top: 0;
+    font-size: 1.2em;
+    color: #333;
+  }
+  
+  .sidebar ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  
+  .sidebar ul ul { /* 二级列表（笔记） */
+    padding-left: 20px; /* 缩进 */
+  }
+  
+  .sidebar li {
+    margin-bottom: 8px;
+    cursor: pointer; /* 表示可点击 */
+    padding: 4px 0;
+  }
+  
+  .sidebar li:hover {
+    color: #007bff; /* 鼠标悬停颜色变化 */
+  }

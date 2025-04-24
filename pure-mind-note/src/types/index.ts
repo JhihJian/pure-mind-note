@@ -51,6 +51,7 @@ export interface ThemeConfig {
 export interface UserConfig {
   workspacePath: string;
   theme?: ThemeConfig;
+  [key: string]: any; // 允许其他字段存在，用于测试和未来扩展
 }
 
 // 应用状态类型

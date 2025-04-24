@@ -9,16 +9,30 @@ let customWorkspacePath: string | null = null;
 async function getDataDir(): Promise<string> {
   try {
     // 如果设置了自定义工作区路径，优先使用
-    if (customWorkspacePath) {
-      return customWorkspacePath;
+    if (customWorkspacePath && customWorkspacePath.trim() !== '') {
+      console.log('使用自定义工作区路径:', customWorkspacePath);
+      
+      // 确保路径最后没有斜杠
+      let path = customWorkspacePath.trim();
+      if (path.endsWith('/') || path.endsWith('\\')) {
+        path = path.slice(0, -1);
+      }
+      
+      return path;
     }
     
     // 否则使用应用数据目录
     if (cachedDataDir === null) {
-      cachedDataDir = await appDataDir();
+      try {
+        cachedDataDir = await appDataDir();
+        console.log('获取应用数据目录:', cachedDataDir);
+      } catch (error) {
+        console.warn('无法获取应用数据目录，使用默认路径:', error);
+        cachedDataDir = './data';
+      }
     }
-    // 既然我们做了错误处理，cachedDataDir不可能为null
-    return cachedDataDir!;
+    
+    return cachedDataDir;
   } catch (error) {
     console.error('获取应用数据目录失败:', error);
     // 开发环境或非Tauri环境下的备用方案
@@ -28,7 +42,14 @@ async function getDataDir(): Promise<string> {
 
 // 设置自定义工作区路径
 export function setCustomWorkspacePath(path: string | null): void {
-  customWorkspacePath = path;
+  if (path === null || path.trim() === '') {
+    console.log('清除自定义工作区路径');
+    customWorkspacePath = null;
+  } else {
+    console.log('设置自定义工作区路径:', path);
+    customWorkspacePath = path.trim();
+  }
+  
   // 重置缓存的数据目录
   cachedDataDir = null;
 }

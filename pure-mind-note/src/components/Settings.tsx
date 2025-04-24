@@ -45,18 +45,27 @@ const Settings: React.FC<SettingsProps> = ({ isVisible, onClose }) => {
   const saveAllSettings = async () => {
     setIsLoading(true);
     try {
-      // 保存工作区路径
-      await updateUserConfig({ 
-        workspacePath,
-        // 将来可以扩展其他设置项
-        theme: {
-          mode: themeMode,
-          fontSize
-        }
-      });
-      setIsLoading(false);
+      // 确保工作区路径有效
+      if (workspacePath.trim() !== '') {
+        // 保存工作区路径
+        await updateUserConfig({ 
+          workspacePath,
+          // 将来可以扩展其他设置项
+          theme: {
+            mode: themeMode,
+            fontSize
+          }
+        });
+        console.log('设置已保存');
+        // 显示成功提示
+        alert('设置已保存成功');
+      } else {
+        alert('请输入有效的工作区路径');
+      }
     } catch (error) {
       console.error('保存设置失败:', error);
+      alert(`保存失败: ${error}`);
+    } finally {
       setIsLoading(false);
     }
   };

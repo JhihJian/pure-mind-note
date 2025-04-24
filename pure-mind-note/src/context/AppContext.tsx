@@ -1,6 +1,7 @@
 import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
 import { AppState, NoteMetadata, Category, MindMapData, SubCategory, UserConfig } from '../types';
 import * as FileService from '../services/FileService';
+import * as ConfigService from '../services/ConfigService';
 
 // 创建默认状态
 const defaultState: AppState = {
@@ -47,16 +48,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   // 加载用户配置
   const loadUserConfig = async (): Promise<void> => {
     try {
-      // 从本地存储获取配置
-      const storedConfig = localStorage.getItem('userConfig');
-      if (storedConfig) {
-        const parsedConfig = JSON.parse(storedConfig) as UserConfig;
-        setState(prevState => ({
-          ...prevState,
-          userConfig: parsedConfig
-        }));
-        console.log('用户配置加载完成:', parsedConfig);
-      }
+      // 使用ConfigService加载配置
+      const config = await ConfigService.loadConfig();
+      setState(prevState => ({
+        ...prevState,
+        userConfig: config
+      }));
+      console.log('用户配置加载完成:', config);
     } catch (error) {
       console.error('加载用户配置失败:', error);
     }
@@ -67,8 +65,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     try {
       const newConfig = { ...state.userConfig, ...config };
       
-      // 保存到本地存储
-      localStorage.setItem('userConfig', JSON.stringify(newConfig));
+      // 使用ConfigService保存配置
+      await ConfigService.saveConfig(newConfig);
       
       // 更新状态
       setState(prevState => ({

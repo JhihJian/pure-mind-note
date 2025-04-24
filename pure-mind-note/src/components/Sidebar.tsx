@@ -10,7 +10,8 @@ const Sidebar: React.FC = () => {
     createNewCategory,
     createNewSubcategory,
     createNewNote,
-    openNote
+    openNote,
+    deleteCategory
   } = useAppContext();
   
   const [newCategoryName, setNewCategoryName] = useState('');
@@ -123,6 +124,18 @@ const Sidebar: React.FC = () => {
     event.stopPropagation();
     setCurrentAddParentId(subCategoryId);
     setShowAddNoteForm(true);
+  };
+  
+  // 删除分类
+  const handleDeleteCategory = async (categoryId: string, event: React.MouseEvent) => {
+    event.stopPropagation();
+    if (window.confirm('确定要删除此分类吗？')) {
+      try {
+        await deleteCategory(categoryId);
+      } catch (error) {
+        alert(`删除分类失败: ${error}`);
+      }
+    }
   };
   
   return (
@@ -266,6 +279,13 @@ const Sidebar: React.FC = () => {
                     title="添加子分类"
                   >
                     <span className="small-icon">+</span>
+                  </button>
+                  <button 
+                    className="action-button delete-category-button"
+                    onClick={(e) => handleDeleteCategory(category.id, e)}
+                    title="删除分类"
+                  >
+                    <span className="small-icon">🗑</span>
                   </button>
                 </div>
                 

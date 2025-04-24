@@ -49,14 +49,8 @@ export async function initializeWorkspace(customPath?: string): Promise<void> {
       await mkdir(dataDir, { recursive: true });
     }
     
-    // 创建默认分类以确保工作区存在
-    try {
-      await invoke('create_category', { dataDir, name: '默认分类' });
-      console.log('工作区初始化成功:', dataDir);
-    } catch (error) {
-      // 处理命令调用失败的情况（例如非Tauri环境或开发模式）
-      console.warn('创建默认分类失败，可能在开发环境中运行:', error);
-    }
+    // 记录工作区初始化成功
+    console.log('工作区初始化成功:', dataDir);
   } catch (error) {
     console.error('工作区初始化失败:', error);
     throw new Error(`无法初始化工作区: ${error}`);
@@ -265,5 +259,16 @@ export async function createSubcategory(categoryId: string, name: string): Promi
   } catch (error) {
     console.error('创建子分类失败:', error);
     throw new Error(`无法创建子分类: ${error}`);
+  }
+}
+
+// 删除分类
+export async function deleteCategory(categoryId: string): Promise<void> {
+  try {
+    const dataDir = await getDataDir();
+    await invoke('delete_category', { dataDir, categoryId });
+  } catch (error) {
+    console.error('删除分类失败:', error);
+    throw new Error(`无法删除分类: ${error}`);
   }
 } 

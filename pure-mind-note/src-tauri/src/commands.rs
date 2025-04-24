@@ -226,4 +226,31 @@ pub fn create_subcategory(data_dir: String, category_id: String, name: String) -
     fs::create_dir_all(subcategory_path).map_err(|e| format!("无法创建子分类目录: {}", e))?;
     
     Ok(subcategory_id)
+}
+
+// 删除分类
+#[tauri::command]
+pub fn delete_category(data_dir: String, category_id: String) -> Result<(), String> {
+    let category_path = PathBuf::from(&data_dir).join(&category_id);
+    
+    // 检查目录是否存在
+    if !category_path.exists() {
+        return Err(format!("分类 '{}' 不存在", category_id));
+    }
+    
+    // 检查目录是否为空
+    let is_empty = fs::read_dir(&category_path)
+        .map_err(|e| format!("无法读取分类目录: {}", e))?
+        .next()
+        .is_none();
+    
+    if !is_empty {
+        return Err(format!("分类 '{}' 不为空，请先删除其中的内容", category_id));
+    }
+    
+    // 删除目录
+    fs::remove_dir(&category_path)
+        .map_err(|e| format!("无法删除分类目录: {}", e))?;
+    
+    Ok(())
 } 

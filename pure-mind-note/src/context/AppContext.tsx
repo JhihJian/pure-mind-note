@@ -22,6 +22,7 @@ interface AppContextProps extends AppState {
   saveCurrentNote: (data: MindMapData) => Promise<void>;
   createNewCategory: (name: string) => Promise<void>;
   createNewSubcategory: (categoryId: string, name: string) => Promise<void>;
+  deleteCategory: (categoryId: string) => Promise<void>;
   setActiveNoteData: (data: MindMapData) => void;
   activeNoteData: MindMapData | null;
   updateUserConfig: (config: Partial<UserConfig>) => Promise<void>;
@@ -286,6 +287,22 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   };
   
+  // 删除分类
+  const deleteCategory = async (categoryId: string): Promise<void> => {
+    try {
+      await FileService.deleteCategory(categoryId);
+      
+      // 更新状态
+      setState(prevState => ({
+        ...prevState,
+        categories: prevState.categories.filter(category => category.id !== categoryId)
+      }));
+    } catch (error) {
+      console.error('删除分类失败:', error);
+      throw error;
+    }
+  };
+  
   return (
     <AppContext.Provider value={{
       ...state,
@@ -297,6 +314,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       saveCurrentNote,
       createNewCategory,
       createNewSubcategory,
+      deleteCategory,
       setActiveNoteData,
       activeNoteData,
       updateUserConfig

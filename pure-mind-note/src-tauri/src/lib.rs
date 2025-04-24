@@ -22,7 +22,8 @@ pub fn run() {
       commands::get_all_notes,
       commands::get_all_categories,
       commands::create_category,
-      commands::create_subcategory
+      commands::create_subcategory,
+      commands::delete_category
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");

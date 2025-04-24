@@ -12,6 +12,8 @@ pub fn run() {
             .build(),
         )?;
       }
+      // 注册文件系统插件
+      app.handle().plugin(tauri_plugin_fs::init())?;
       Ok(())
     })
     .invoke_handler(tauri::generate_handler![

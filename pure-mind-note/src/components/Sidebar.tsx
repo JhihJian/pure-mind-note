@@ -10,9 +10,7 @@ const Sidebar: React.FC = () => {
     createNewCategory,
     createNewSubcategory,
     createNewNote,
-    openNote,
-    userConfig,
-    updateUserConfig
+    openNote
   } = useAppContext();
   
   const [newCategoryName, setNewCategoryName] = useState('');
@@ -21,29 +19,12 @@ const Sidebar: React.FC = () => {
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [selectedSubCategoryId, setSelectedSubCategoryId] = useState<string | null>(null);
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
-  const [showSettings, setShowSettings] = useState(false);
-  const [workspacePath, setWorkspacePath] = useState(userConfig.workspacePath);
-  const [showAddMenu, setShowAddMenu] = useState(false);
   const [showAddCategoryForm, setShowAddCategoryForm] = useState(false);
   const [showAddSubcategoryForm, setShowAddSubcategoryForm] = useState(false);
   const [showAddNoteForm, setShowAddNoteForm] = useState(false);
   const [currentAddParentId, setCurrentAddParentId] = useState<string | null>(null);
   
   const addMenuRef = useRef<HTMLDivElement>(null);
-  
-  // 关闭外部点击的添加菜单
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (addMenuRef.current && !addMenuRef.current.contains(event.target as Node)) {
-        setShowAddMenu(false);
-      }
-    };
-    
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
   
   // 切换分类折叠状态
   const toggleCategory = (categoryId: string, event: React.MouseEvent) => {
@@ -106,12 +87,6 @@ const Sidebar: React.FC = () => {
     openNote(noteId);
   };
   
-  // 保存工作区配置
-  const saveWorkspacePath = () => {
-    updateUserConfig({ workspacePath });
-    setShowSettings(false);
-  };
-  
   // 获取指定分类和可能的子分类下的笔记
   const getFilteredNotes = (categoryId: string, subCategoryId?: string | null) => {
     return notes.filter(note => {
@@ -162,40 +137,8 @@ const Sidebar: React.FC = () => {
           >
             <span className="icon">+</span>
           </button>
-          <button 
-            className="action-button settings-button" 
-            onClick={() => setShowSettings(!showSettings)}
-            title="设置"
-          >
-            <span className="icon">⚙️</span>
-          </button>
         </div>
       </div>
-      
-      {/* 设置面板 */}
-      {showSettings && (
-        <div className="settings-panel">
-          <div className="panel-header">
-            <h3>应用设置</h3>
-            <button 
-              className="close-button"
-              onClick={() => setShowSettings(false)}
-            >
-              ×
-            </button>
-          </div>
-          <div className="setting-item">
-            <label>工作区路径:</label>
-            <input
-              type="text"
-              value={workspacePath}
-              onChange={(e) => setWorkspacePath(e.target.value)}
-              placeholder="输入自定义工作区路径"
-            />
-            <button className="primary-button" onClick={saveWorkspacePath}>保存路径</button>
-          </div>
-        </div>
-      )}
       
       {/* 添加分类表单 */}
       {showAddCategoryForm && (

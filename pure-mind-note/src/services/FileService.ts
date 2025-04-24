@@ -63,6 +63,47 @@ export async function initializeWorkspace(customPath?: string): Promise<void> {
   }
 }
 
+// 扫描工作区目录结构
+export async function scanWorkspaceDirectory(): Promise<{categories: Category[], notes: NoteMetadata[]}> {
+  try {
+    const dataDir = await getDataDir();
+    let categories: Category[] = [];
+    let notes: NoteMetadata[] = [];
+    
+    // 获取分类
+    try {
+      categories = await getAllCategories();
+    } catch (error) {
+      console.error('扫描分类失败:', error);
+      categories = [];
+    }
+    
+    // 获取笔记
+    try {
+      notes = await getAllNotes();
+    } catch (error) {
+      console.error('扫描笔记失败:', error);
+      notes = [];
+    }
+    
+    return { categories, notes };
+  } catch (error) {
+    console.error('扫描工作区失败:', error);
+    return { categories: [], notes: [] };
+  }
+}
+
+// 如果后端不支持get_all_categories，创建默认分类
+async function getDefaultCategories(): Promise<Category[]> {
+  return [
+    {
+      id: '默认分类',
+      name: '默认分类',
+      subCategories: []
+    }
+  ];
+}
+
 // 获取所有分类
 export async function getAllCategories(): Promise<Category[]> {
   try {
@@ -93,17 +134,6 @@ export async function getAllCategories(): Promise<Category[]> {
     console.error('获取分类失败:', error);
     return getDefaultCategories();
   }
-}
-
-// 如果后端不支持get_all_categories，创建默认分类
-async function getDefaultCategories(): Promise<Category[]> {
-  return [
-    {
-      id: '默认分类',
-      name: '默认分类',
-      subCategories: []
-    }
-  ];
 }
 
 // 读取笔记

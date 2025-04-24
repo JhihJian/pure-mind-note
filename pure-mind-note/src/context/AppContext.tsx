@@ -43,20 +43,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     });
   }, []);
 
-  // 当工作区准备好后，加载分类
-  useEffect(() => {
-    if (workspaceReady) {
-      loadCategories();
-    }
-  }, [workspaceReady]);
-
-  // 分类加载后，加载笔记
-  useEffect(() => {
-    if (state.categories.length > 0) {
-      loadNotes();
-    }
-  }, [state.categories]);
-
   // 加载用户配置
   const loadUserConfig = async (): Promise<void> => {
     try {
@@ -97,18 +83,45 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       console.log('用户配置更新完成:', newConfig);
     } catch (error) {
       console.error('更新用户配置失败:', error);
+      throw error;
     }
   };
 
   // 初始化工作区
   const loadWorkspace = async (): Promise<void> => {
     try {
+      // 复位状态
+      setState(prevState => ({
+        ...prevState,
+        categories: [],
+        notes: [],
+        activeNote: null
+      }));
+      setActiveNoteData(null);
+      setWorkspaceReady(false);
+      
       // 初始化应用数据目录，确保工作区存在
       await FileService.initializeWorkspace(state.userConfig.workspacePath);
+      
+      // 加载分类
+      const categories = await FileService.getAllCategories();
+      
+      // 加载笔记
+      const notes = await FileService.getAllNotes();
+      
+      // 更新状态
+      setState(prevState => ({
+        ...prevState,
+        categories,
+        notes
+      }));
+      
       setWorkspaceReady(true);
-      console.log('工作区初始化完成');
+      console.log('工作区初始化完成，已加载分类和笔记');
     } catch (error) {
       console.error('工作区初始化失败:', error);
+      setWorkspaceReady(true); // 即使失败也要设置为就绪状态，以便用户可以尝试创建内容
+      throw error;
     }
   };
 
@@ -193,10 +206,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   
   // 保存当前笔记
   const saveCurrentNote = async (data: MindMapData): Promise<void> => {
-    if (!state.activeNote) return;
-    
     try {
-      // 设置更新时间
+      if (!state.activeNote) return;
+      
+      // 更新时间戳
       const updatedData = {
         ...data,
         lastUpdated: new Date().toISOString()
@@ -208,7 +221,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       // 更新状态
       setActiveNoteData(updatedData);
       
-      // 更新笔记元数据
+      // 更新笔记列表中的最后更新时间
       setState(prevState => ({
         ...prevState,
         notes: prevState.notes.map(note => 
@@ -227,14 +240,17 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     try {
       const categoryId = await FileService.createCategory(name);
       
-      // 添加到分类列表
+      // 更新状态
       setState(prevState => ({
         ...prevState,
-        categories: [...prevState.categories, {
-          id: categoryId,
-          name,
-          subCategories: []
-        }]
+        categories: [
+          ...prevState.categories,
+          {
+            id: categoryId,
+            name,
+            subCategories: []
+          }
+        ]
       }));
     } catch (error) {
       console.error('创建分类失败:', error);
@@ -246,18 +262,21 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     try {
       const subCategoryId = await FileService.createSubcategory(categoryId, name);
       
-      // 更新分类树
+      // 更新状态
       setState(prevState => ({
         ...prevState,
         categories: prevState.categories.map(category => 
-          category.id === categoryId 
+          category.id === categoryId
             ? {
                 ...category,
-                subCategories: [...category.subCategories, {
-                  id: subCategoryId,
-                  name,
-                  parentId: categoryId
-                }]
+                subCategories: [
+                  ...category.subCategories,
+                  {
+                    id: subCategoryId,
+                    name,
+                    parentId: categoryId
+                  }
+                ]
               }
             : category
         )
@@ -267,34 +286,31 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   };
   
-  // 上下文值
-  const contextValue: AppContextProps = {
-    ...state,
-    loadWorkspace,
-    loadCategories,
-    loadNotes,
-    createNewNote,
-    openNote,
-    saveCurrentNote,
-    createNewCategory,
-    createNewSubcategory,
-    activeNoteData,
-    setActiveNoteData,
-    updateUserConfig
-  };
-  
   return (
-    <AppContext.Provider value={contextValue}>
+    <AppContext.Provider value={{
+      ...state,
+      loadWorkspace,
+      loadCategories,
+      loadNotes,
+      createNewNote,
+      openNote,
+      saveCurrentNote,
+      createNewCategory,
+      createNewSubcategory,
+      setActiveNoteData,
+      activeNoteData,
+      updateUserConfig
+    }}>
       {children}
     </AppContext.Provider>
   );
 };
 
-// 自定义钩子
-export const useAppContext = (): AppContextProps => {
+// 创建Hook用于在组件中使用上下文
+export const useAppContext = () => {
   const context = useContext(AppContext);
   if (context === undefined) {
-    throw new Error('useAppContext must be used within an AppProvider');
+    throw new Error('useAppContext必须在AppProvider内部使用');
   }
   return context;
 }; 

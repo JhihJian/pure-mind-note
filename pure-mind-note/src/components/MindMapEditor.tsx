@@ -64,7 +64,7 @@ const MindMapEditor: React.FC = () => {
         nodeTextEdit: true,
         exportPen: true,
         width: window.innerWidth - 280, // 减去侧边栏宽度
-        height: window.innerHeight - 10,
+        height: window.innerHeight - 60, // 减去顶部标题栏高度
         keypress: true // 第三方库特有的选项
       });
 
@@ -112,7 +112,10 @@ const MindMapEditor: React.FC = () => {
   useEffect(() => {
     const handleResize = () => {
       if (mindMapInstanceRef.current) {
-        mindMapInstanceRef.current.resize(window.innerWidth - 280, window.innerHeight - 10);
+        mindMapInstanceRef.current.resize(
+          window.innerWidth - 280, 
+          window.innerHeight - 60  // 减去顶部标题栏高度
+        );
       }
     };
 
@@ -136,13 +139,10 @@ const MindMapEditor: React.FC = () => {
         </div>
       ) : (
         <>
-          <div className="mindmap-header">
-            <h2>{activeNote.title}</h2>
-            <div className="mindmap-toolbar">
-              <button onClick={toggleToolbar}>
-                {toolbarVisible ? '隐藏工具栏' : '显示工具栏'}
-              </button>
-            </div>
+          <div className="mindmap-toolbar">
+            <button onClick={toggleToolbar}>
+              {toolbarVisible ? '隐藏工具栏' : '显示工具栏'}
+            </button>
           </div>
           <div className="mindmap-container" ref={mindMapContainerRef}></div>
         </>

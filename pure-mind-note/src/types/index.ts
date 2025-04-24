@@ -1,29 +1,4 @@
-// 定义笔记的基本类型
-export interface MindMapData {
-  id: string;
-  title: string;
-  rootId: string;
-  theme?: string;
-  lastUpdated: string;
-  data: {
-    // Mind-map组件所需的数据结构
-    root: MindMapNode;
-    // 可能包含更多字段，根据 simple-mind-map 库的要求
-  };
-}
-
-// 思维导图节点类型
-export interface MindMapNode {
-  data: {
-    id: string;
-    text: string;
-    [key: string]: any;
-  };
-  children?: MindMapNode[];
-  [key: string]: any;
-}
-
-// 笔记元数据，用于显示在侧边栏
+// 笔记元数据类型
 export interface NoteMetadata {
   id: string;
   title: string;
@@ -47,15 +22,41 @@ export interface SubCategory {
   parentId: string;
 }
 
+// 脑图数据类型
+export interface MindMapData {
+  id: string;
+  title: string;
+  rootId: string;
+  lastUpdated: string;
+  theme?: string;
+  data: {
+    [key: string]: {
+      data: {
+        id: string;
+        text: string;
+        [key: string]: any;
+      };
+      children?: string[];
+    };
+  };
+}
+
+// 主题配置类型
+export interface ThemeConfig {
+  mode: 'light' | 'dark' | 'system';
+  fontSize: 'small' | 'medium' | 'large';
+}
+
 // 用户配置类型
 export interface UserConfig {
   workspacePath: string;
+  theme?: ThemeConfig;
 }
 
 // 应用状态类型
 export interface AppState {
   categories: Category[];
-  activeNote: NoteMetadata | null;
   notes: NoteMetadata[];
+  activeNote: NoteMetadata | null;
   userConfig: UserConfig;
 } 

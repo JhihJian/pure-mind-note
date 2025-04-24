@@ -6,6 +6,7 @@
   position: relative;
   display: flex;
   flex-direction: column;
+  background-color: var(--background-color, #ffffff);
 }
 
 .mindmap-welcome {
@@ -14,7 +15,7 @@
   justify-content: center;
   align-items: center;
   height: 100%;
-  background-color: #f9f9f9;
+  background-color: var(--background-color, #f9f9f9);
   border-radius: 8px;
   margin: 16px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
@@ -22,33 +23,33 @@
 
 .mindmap-welcome h2 {
   font-size: 1.8rem;
-  color: #333;
+  color: var(--text-color, #333);
   margin-bottom: 16px;
 }
 
 .mindmap-welcome p {
-  color: #666;
+  color: var(--text-color, #666);
   font-size: 1.1rem;
 }
 
-.mindmap-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 16px;
-  border-bottom: 1px solid #eee;
+.mindmap-container {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
 }
 
-.mindmap-header h2 {
-  margin: 0;
-  font-size: 1.4rem;
-  color: #333;
+.mindmap-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  padding: 8px 16px;
+  background-color: var(--background-color, #ffffff);
+  border-bottom: 1px solid var(--border-color, #eee);
 }
 
 .mindmap-toolbar button {
   padding: 6px 12px;
   background-color: #f0f0f0;
-  border: 1px solid #ddd;
+  border: 1px solid var(--border-color, #ddd);
   border-radius: 4px;
   cursor: pointer;
   transition: background-color 0.2s;
@@ -58,20 +59,14 @@
   background-color: #e0e0e0;
 }
 
-.mindmap-container {
-  flex: 1;
-  position: relative;
-  overflow: hidden;
-}
-
 /* 覆盖思维导图库的默认样式 */
 .mind-map-container {
-  background-color: #fff !important;
+  background-color: var(--background-color, #fff) !important;
 }
 
 .mind-map-toolbar {
   background-color: #f7f7f7 !important;
-  border-bottom: 1px solid #eee !important;
+  border-bottom: 1px solid var(--border-color, #eee) !important;
 }
 
 .mind-map-node {

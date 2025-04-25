@@ -1,12 +1,14 @@
 /* src/components/MindMapEditor.css */
 .mindmap-editor {
-  flex: 1;
-  height: 100%;
-  overflow: hidden;
   position: relative;
-  display: flex;
-  flex-direction: column;
-  background-color: var(--background-color, #ffffff);
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.mindmap-container {
+  width: 100%;
+  height: calc(100vh - 60px);
 }
 
 .mindmap-welcome {
@@ -15,16 +17,14 @@
   justify-content: center;
   align-items: center;
   height: 100%;
-  background-color: var(--background-color, #f9f9f9);
-  border-radius: 8px;
-  margin: 16px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  color: #666;
 }
 
 .mindmap-welcome h2 {
-  font-size: 1.8rem;
-  color: var(--text-color, #333);
-  margin-bottom: 16px;
+  margin-bottom: 20px;
+  font-size: 24px;
+  color: #333;
 }
 
 .mindmap-welcome p {
@@ -32,31 +32,209 @@
   font-size: 1.1rem;
 }
 
-.mindmap-container {
-  flex: 1;
-  position: relative;
-  overflow: hidden;
-}
-
 .mindmap-toolbar {
+  padding: 10px;
+  background-color: #f4f4f4;
+  border-bottom: 1px solid #ddd;
   display: flex;
-  justify-content: flex-end;
-  padding: 8px 16px;
-  background-color: var(--background-color, #ffffff);
-  border-bottom: 1px solid var(--border-color, #eee);
+  align-items: center;
+  flex-wrap: wrap;
 }
 
 .mindmap-toolbar button {
-  padding: 6px 12px;
-  background-color: #f0f0f0;
-  border: 1px solid var(--border-color, #ddd);
+  background-color: #fff;
+  border: 1px solid #ddd;
   border-radius: 4px;
+  padding: 5px 10px;
+  margin-right: 10px;
+  margin-bottom: 5px;
   cursor: pointer;
-  transition: background-color 0.2s;
+  font-size: 14px;
+  transition: all 0.2s;
 }
 
 .mindmap-toolbar button:hover {
-  background-color: #e0e0e0;
+  background-color: #f0f0f0;
+  border-color: #bbb;
+}
+
+.mindmap-toolbar button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.node-operations {
+  display: flex;
+  flex-wrap: wrap;
+  margin-left: 10px;
+}
+
+/* 节点样式 */
+.smm-node {
+  cursor: pointer;
+}
+
+.smm-node:hover {
+  opacity: 0.9;
+}
+
+/* 模态框样式 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background-color: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  width: 450px;
+  max-width: 90%;
+}
+
+.modal-content h3 {
+  margin-top: 0;
+  margin-bottom: 20px;
+  color: #333;
+  font-size: 18px;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 500;
+  color: #555;
+}
+
+.form-group input,
+.form-group textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+.modal-actions button {
+  background-color: #f0f0f0;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 6px 12px;
+  margin-left: 10px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.modal-actions button:last-child {
+  background-color: #4caf50;
+  color: white;
+  border-color: #4caf50;
+}
+
+.modal-actions button:hover {
+  opacity: 0.8;
+}
+
+/* 状态栏样式 */
+.status-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: rgba(245, 245, 245, 0.9);
+  padding: 8px 16px;
+  z-index: 1000;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  min-height: 32px;
+  box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.loading-indicator {
+  color: #2196f3;
+  margin-right: 15px;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+}
+
+.loading-indicator:before {
+  content: "";
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  margin-right: 8px;
+  border: 2px solid #2196f3;
+  border-radius: 50%;
+  border-top-color: transparent;
+  animation: spin 1s linear infinite;
+}
+
+.error-message {
+  color: #f44336;
+  margin-right: 15px;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+}
+
+.save-message {
+  color: #4caf50;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+  .mindmap-toolbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .node-operations {
+    margin-left: 0;
+    margin-top: 10px;
+    width: 100%;
+  }
+  
+  .modal-content {
+    width: 90%;
+    padding: 15px;
+  }
 }
 
 /* 覆盖思维导图库的默认样式 */

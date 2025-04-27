@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../context/AppContext';
 import './Workspace.css';
 import * as ConfigService from '../services/ConfigService';
+import { normalize } from '@tauri-apps/api/path';
 
 interface WorkspaceProps {
   isVisible: boolean;
@@ -12,6 +13,42 @@ const Workspace: React.FC<WorkspaceProps> = ({ isVisible, onClose }) => {
   const { userConfig, updateUserConfig, loadWorkspace } = useAppContext();
   const [workspacePath, setWorkspacePath] = useState(userConfig.workspacePath);
   const [isLoading, setIsLoading] = useState(false);
+
+  // 当userConfig或isVisible变化时更新状态
+  useEffect(() => {
+    if (isVisible) {
+      setWorkspacePath(userConfig.workspacePath);
+      
+      // 规范化路径格式
+      if (userConfig.workspacePath) {
+        normalizeWorkspacePath(userConfig.workspacePath);
+      }
+    }
+  }, [isVisible, userConfig]);
+
+  // 规范化路径格式
+  const normalizeWorkspacePath = async (path: string) => {
+    if (!path || path.trim() === '') return;
+    
+    try {
+      // 规范化路径
+      let normalizedPath = await normalize(path);
+      
+      // 修复Windows上可能的分号错误
+      if (normalizedPath.includes(';')) {
+        normalizedPath = normalizedPath.replace(';', ':');
+        console.log('修正了路径中的分号:', normalizedPath);
+      }
+      
+      // 只有当路径格式有变化时才更新
+      if (normalizedPath !== path) {
+        setWorkspacePath(normalizedPath);
+        console.log('规范化后的工作区路径:', normalizedPath);
+      }
+    } catch (error) {
+      console.warn('路径规范化失败:', error);
+    }
+  };
 
   // 保存工作区配置
   const saveWorkspacePath = async () => {

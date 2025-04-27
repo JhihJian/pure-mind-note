@@ -1,24 +1,41 @@
 import { NoteMetadata, MindMapData, Category, SubCategory } from '../types';
 import { invoke } from '@tauri-apps/api/core';
 import { BaseDirectory, exists, mkdir } from '@tauri-apps/plugin-fs';
-import { appDataDir } from '@tauri-apps/api/path';
+import { appDataDir, normalize } from '@tauri-apps/api/path';
 // 获取应用数据目录
 let cachedDataDir: string | null = null;
 let customWorkspacePath: string | null = null;
+
+// 格式化路径，确保Windows路径格式正确
+async function formatPath(path: string): Promise<string> {
+  try {
+    // 首先规范化路径（统一斜杠等）
+    let normalizedPath = await normalize(path);
+    
+    // 处理Windows上路径中可能存在的分号错误（例如"C;/path"应该是"C:/path"）
+    if (normalizedPath.includes(';')) {
+      normalizedPath = normalizedPath.replace(';', ':');
+      console.log('修正了路径中的分号:', normalizedPath);
+    }
+    
+    // 确保路径最后没有斜杠
+    if (normalizedPath.endsWith('/') || normalizedPath.endsWith('\\')) {
+      normalizedPath = normalizedPath.slice(0, -1);
+    }
+    
+    return normalizedPath;
+  } catch (error) {
+    console.error('路径格式化失败:', error);
+    return path; // 出错时返回原始路径
+  }
+}
 
 async function getDataDir(): Promise<string> {
   try {
     // 如果设置了自定义工作区路径，优先使用
     if (customWorkspacePath && customWorkspacePath.trim() !== '') {
       console.log('使用自定义工作区路径:', customWorkspacePath);
-      
-      // 确保路径最后没有斜杠
-      let path = customWorkspacePath.trim();
-      if (path.endsWith('/') || path.endsWith('\\')) {
-        path = path.slice(0, -1);
-      }
-      
-      return path;
+      return await formatPath(customWorkspacePath);
     }
     
     // 否则使用应用数据目录
@@ -59,10 +76,19 @@ export async function initializeWorkspace(customPath?: string): Promise<void> {
   try {
     // 如果提供了自定义路径，设置它
     if (customPath && customPath.trim() !== '') {
-      setCustomWorkspacePath(customPath);
+      // 先格式化路径
+      const formattedPath = await formatPath(customPath);
+      console.log(`初始化工作区，原始路径: ${customPath}, 格式化后: ${formattedPath}`);
+      
+      // 设置格式化后的路径
+      setCustomWorkspacePath(formattedPath);
+    } else if (customPath === '') {
+      // 如果路径是空字符串，则清除自定义路径
+      setCustomWorkspacePath(null);
     }
     
     const dataDir = await getDataDir();
+    console.log('工作区实际使用路径:', dataDir);
     
     // 检查目录是否存在，不存在则创建
     const dirExists = await exists(dataDir);

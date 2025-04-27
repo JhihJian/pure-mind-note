@@ -38,32 +38,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [activeNoteData, setActiveNoteData] = useState<MindMapData | null>(null);
   const [workspaceReady, setWorkspaceReady] = useState<boolean>(false);
 
-  // 初始化工作区
-  useEffect(() => {
-    loadUserConfig().then(() => {
-      loadWorkspace();
-    });
-  }, []);
-
-  // 加载用户配置
-  const loadUserConfig = async (): Promise<void> => {
-    try {
-      // 使用ConfigService加载配置
-      const config = await ConfigService.loadConfig();
-      setState(prevState => ({
-        ...prevState,
-        userConfig: config
-      }));
-      console.log('用户配置加载完成:', config);
-    } catch (error) {
-      console.error('加载用户配置失败:', error);
-    }
-  };
-  
   // 更新用户配置
   const updateUserConfig = async (config: Partial<UserConfig>): Promise<void> => {
     try {
-      const newConfig = { ...state.userConfig, ...config };
+      // 创建新配置对象
+      let newConfig = { ...state.userConfig, ...config };
       
       // 使用ConfigService保存配置
       await ConfigService.saveConfig(newConfig);
@@ -73,11 +52,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         ...prevState,
         userConfig: newConfig
       }));
-      
-      // 如果工作区路径更改，重新加载工作区
-      if (config.workspacePath !== undefined && config.workspacePath !== state.userConfig.workspacePath) {
-        await loadWorkspace();
-      }
       
       console.log('用户配置更新完成:', newConfig);
     } catch (error) {

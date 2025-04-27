@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../context/AppContext';
 import './Settings.css';
+import { normalize } from '@tauri-apps/api/path';
 
 interface SettingsProps {
   isVisible: boolean;
@@ -12,8 +13,52 @@ const Settings: React.FC<SettingsProps> = ({ isVisible, onClose }) => {
   const [workspacePath, setWorkspacePath] = useState(userConfig.workspacePath);
   const [activeTab, setActiveTab] = useState<'workspace' | 'appearance' | 'advanced'>('workspace');
   const [isLoading, setIsLoading] = useState(false);
-  const [themeMode, setThemeMode] = useState<'light' | 'dark' | 'system'>('system');
-  const [fontSize, setFontSize] = useState<'small' | 'medium' | 'large'>('medium');
+  const [themeMode, setThemeMode] = useState<'light' | 'dark' | 'system'>(
+    userConfig.theme?.mode || 'system'
+  );
+  const [fontSize, setFontSize] = useState<'small' | 'medium' | 'large'>(
+    userConfig.theme?.fontSize || 'medium'
+  );
+
+  // 每次设置面板变为可见或userConfig更改时，更新状态
+  useEffect(() => {
+    if (isVisible) {
+      // 重新设置工作区路径
+      setWorkspacePath(userConfig.workspacePath);
+      
+      // 重新设置主题模式
+      setThemeMode(userConfig.theme?.mode || 'system');
+      setFontSize(userConfig.theme?.fontSize || 'medium');
+      
+      // 规范化路径格式
+      if (userConfig.workspacePath) {
+        normalizeWorkspacePath(userConfig.workspacePath);
+      }
+    }
+  }, [isVisible, userConfig]);
+
+  // 规范化路径格式
+  const normalizeWorkspacePath = async (path: string) => {
+    if (!path) return;
+    
+    try {
+      // 规范化路径
+      let normalizedPath = await normalize(path);
+      
+      // 修复路径中的分号
+      if (normalizedPath.includes(';')) {
+        normalizedPath = normalizedPath.replace(';', ':');
+      }
+      
+      // 只有当路径格式有变化时才更新
+      if (normalizedPath !== path) {
+        setWorkspacePath(normalizedPath);
+        console.log('规范化后的工作区路径:', normalizedPath);
+      }
+    } catch (error) {
+      console.warn('路径规范化失败:', error);
+    }
+  };
 
   // 保存工作区配置
   const saveWorkspacePath = async () => {

@@ -1,28 +1,53 @@
 import React, { useState } from 'react';
 import Sidebar from './components/Sidebar';
 import MindMapEditor from './components/MindMapEditor';
+import JsonViewer from './components/JsonViewer';
 import Settings from './components/Settings';
-import { AppProvider } from './context/AppContext';
+import ViewSelector, { ViewType } from './components/ViewSelector';
+import { AppProvider, useAppContext } from './context/AppContext';
 import WorkspaceInitializer from './components/WorkspaceInitializer';
 import './App.css'; // 我们创建这个CSS文件来定义整体布局
 
-function App() {
+// 主应用内容组件
+const AppContent: React.FC = () => {
   const [showSettings, setShowSettings] = useState(false);
   const [isWorkspaceReady, setIsWorkspaceReady] = useState(false);
+  const [currentView, setCurrentView] = useState<ViewType>(ViewType.MINDMAP);
+  const { activeNoteData } = useAppContext();
+
+  // 处理视图切换
+  const handleViewChange = (view: ViewType) => {
+    setCurrentView(view);
+  };
+
+  // 根据当前视图渲染不同的内容
+  const renderContent = () => {
+    switch (currentView) {
+      case ViewType.JSON:
+        return <JsonViewer data={activeNoteData} />;
+      case ViewType.MINDMAP:
+      default:
+        return <MindMapEditor />;
+    }
+  };
 
   return (
-    <AppProvider>
-      <div className="app-container">
-        {/* 工作区初始化组件 */}
-        <WorkspaceInitializer 
-          onInitialized={() => setIsWorkspaceReady(true)}
-          onError={(err) => console.error('工作区初始化错误:', err)}
-        />
-        
-        <Sidebar />
-        <div className="main-content">
-          <div className="app-header">
-            <h1>脑图笔记本</h1>
+    <div className="app-container">
+      {/* 工作区初始化组件 */}
+      <WorkspaceInitializer 
+        onInitialized={() => setIsWorkspaceReady(true)}
+        onError={(err) => console.error('工作区初始化错误:', err)}
+      />
+      
+      <Sidebar />
+      <div className="main-content">
+        <div className="app-header">
+          <h1>脑图笔记本</h1>
+          <div className="app-header-right">
+            <ViewSelector 
+              currentView={currentView} 
+              onViewChange={handleViewChange} 
+            />
             <button 
               className="settings-button" 
               onClick={() => setShowSettings(true)}
@@ -31,15 +56,24 @@ function App() {
               <span className="icon">⚙️</span>
             </button>
           </div>
-          <MindMapEditor />
         </div>
-        
-        {/* 全局设置 */}
-        <Settings 
-          isVisible={showSettings} 
-          onClose={() => setShowSettings(false)} 
-        />
+        {renderContent()}
       </div>
+      
+      {/* 全局设置 */}
+      <Settings 
+        isVisible={showSettings} 
+        onClose={() => setShowSettings(false)} 
+      />
+    </div>
+  );
+};
+
+// 主应用组件
+function App() {
+  return (
+    <AppProvider>
+      <AppContent />
     </AppProvider>
   );
 }

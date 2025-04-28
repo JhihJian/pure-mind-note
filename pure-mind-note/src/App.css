@@ -33,6 +33,13 @@
   background-color: var(--background-color);
 }
 
+/* 应用标题栏右侧区域 */
+.app-header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .app-header h1 {
   margin: 0;
   font-size: 1.3rem;

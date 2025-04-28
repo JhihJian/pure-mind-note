@@ -34,7 +34,7 @@
 - ✅ 本地工作区设置
 - ✅ 笔记二级分类管理
 - ✅ JSON格式保存笔记
-- ✅ 跨平台支持 (Windows/macOS/Linux)
+- ✅ 跨平台支持 (Windows/macOS/)
 
 ## 🛠️ 技术栈
 
@@ -116,4 +116,4 @@ npm run tauri:build
 - [simple-mind-map](https://github.com/wanglin2/mind-map) - 提供强大的思维导图功能
 - [Tauri](https://tauri.app/) - 提供高性能的跨平台桌面应用框架
 - [React](https://reactjs.org/) - 用户界面库
-- [Vite](https://vitejs.dev/) - 前端构建工具 
+- [Vite](https://vitejs.dev/) - 前端构建工具 Linux

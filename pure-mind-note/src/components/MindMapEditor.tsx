@@ -683,23 +683,7 @@ const MindMapEditor: React.FC = () => {
     }
   }, [activeNodesState, forceSelectNode, showFeedback]);
 
-  // 在handleInsertTag后添加全局快捷键处理
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // 按键T时打开标签面板
-      if (e.key === 't' || e.key === 'T') {
-        if (activeNodesState.length > 0) {
-          e.preventDefault();
-          handleInsertTag();
-        }
-      }
-    };
 
-    document.addEventListener('keydown', handleKeyDown);
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [activeNodesState, handleInsertTag]);
 
   const handleAddGeneralization = useCallback(() => {
     withViewStatePreservation(() => {

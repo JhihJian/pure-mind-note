@@ -32,9 +32,17 @@
   font-size: 1.1rem;
 }
 
+/* 工具栏容器 */
+.toolbar-container {
+  width: 100%;
+  background-color: #f5f5f5;
+  border-bottom: 1px solid #ddd;
+  z-index: 10;
+}
+
 .mindmap-toolbar {
-  padding: 10px;
-  background-color: #f4f4f4;
+  padding: 10px 15px;
+  background-color: #f5f5f5;
   border-bottom: 1px solid #ddd;
   display: flex;
   align-items: center;
@@ -45,17 +53,18 @@
   background-color: #fff;
   border: 1px solid #ddd;
   border-radius: 4px;
-  padding: 5px 10px;
+  padding: 6px 12px;
   margin-right: 10px;
   margin-bottom: 5px;
   cursor: pointer;
   font-size: 14px;
   transition: all 0.2s;
+  color: #333;
 }
 
 .mindmap-toolbar button:hover {
-  background-color: #f0f0f0;
-  border-color: #bbb;
+  background-color: #e0e0e0;
+  border-color: #ccc;
 }
 
 .mindmap-toolbar button:disabled {
@@ -63,6 +72,31 @@
   cursor: not-allowed;
 }
 
+/* 工具栏按钮样式 */
+.toolbar-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.button-icon {
+  margin-right: 4px;
+  font-size: 16px;
+}
+
+/* 标签按钮特殊样式 */
+.tag-button {
+  background-color: #4caf50 !important;
+  color: white !important;
+  border-color: #43a047 !important;
+  font-weight: 500;
+}
+
+.tag-button:hover {
+  background-color: #388e3c !important;
+}
+
+/* 节点操作区域 */
 .node-operations {
   display: flex;
   flex-wrap: wrap;
@@ -254,4 +288,76 @@
 
 .node-text {
   font-family: "PingFang SC", "Microsoft YaHei", sans-serif !important;
+}
+
+/* 标签提示文字 */
+.tag-hint {
+  margin-bottom: 15px;
+  color: #555;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* 节点标签样式 */
+.mm-node-tag {
+  position: absolute;
+  top: -18px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 3px;
+  z-index: 10;
+}
+
+.mm-node-tag .tag-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+/* 标签弹窗 */
+.modal-content .node-tag-selector {
+  margin-top: 15px;
+  border: 1px solid #eee;
+  padding: 15px;
+  border-radius: 4px;
+  background-color: #f9f9f9;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+/* 节点标签样式增强 */
+.tag-badge {
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 10px;
+  color: white;
+  font-weight: 500;
+  display: inline-block;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  margin: 2px;
+}
+
+/* 调试信息面板 */
+.debug-panel {
+  position: fixed;
+  bottom: 40px;
+  right: 10px;
+  max-width: 400px;
+  max-height: 200px;
+  overflow: auto;
+  background: rgba(0,0,0,0.7);
+  color: white;
+  padding: 10px;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 12px;
+  z-index: 9999;
+  display: none;
+}
+
+/* 数据调试开启时显示 */
+.data-debug-enabled .debug-panel {
+  display: block;
 }

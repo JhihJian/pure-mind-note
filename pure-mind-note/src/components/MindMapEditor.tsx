@@ -2,6 +2,11 @@
 import React, { useRef, useEffect, useState, useMemo, useCallback } from 'react';
 import MindMap from 'simple-mind-map';
 import { useAppContext } from '../context/AppContext';
+import { NodeTag, NODE_TAG_COLORS } from '../types';
+import { NodeTagDisplay } from './NodeTagSelector';
+import MindMapToolbar from './MindMapToolbar';
+import MindMapNodeModals, { MindMapNodeModalsHandles } from './MindMapNodeModals';
+import { TagDeletePlugin } from '../plugins';
 import './MindMapEditor.css';
 
 // 常量定义
@@ -16,6 +21,7 @@ declare global {
       saveCurrentNote?: (data: any) => void;
       [key: string]: any;
     };
+    _mindMap?: any; // 添加全局mindMap实例引用
   }
 }
 
@@ -39,6 +45,7 @@ const StatusBar: React.FC<StatusBarProps> = ({ isLoading, errorMessage, saveMess
 const MindMapEditor: React.FC = () => {
   const mindMapContainerRef = useRef<HTMLDivElement>(null);
   const mindMapInstanceRef = useRef<any>(null);
+  const nodeModalsRef = useRef<MindMapNodeModalsHandles>(null);
   const { activeNote, activeNoteData, saveCurrentNote } = useAppContext();
   const lastSavedDataRef = useRef<any>(null);
   const isSavingRef = useRef<boolean>(false);
@@ -47,6 +54,10 @@ const MindMapEditor: React.FC = () => {
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const prevFileNameRef = useRef<string | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
+  
+  // 工具栏状态
+  const [toolbarVisible, setToolbarVisible] = useState(true);
+  const [activeNodesState, setActiveNodesState] = useState<any[]>([]);
   
   // 使用 useMemo 缓存 activeNote，避免不必要的更新
   const memoizedActiveNote = useMemo(() => activeNote, [
@@ -82,18 +93,141 @@ const MindMapEditor: React.FC = () => {
     if (!mindMapContainerRef.current || !activeNoteData) return false;
     
     try {
+      // 自定义节点渲染函数，用于支持显示标签
+      const customRender = {
+        beforeRender(
+          node: any, 
+          { 
+            ctx, 
+            data, 
+            bBoxes 
+          }: { 
+            ctx: CanvasRenderingContext2D; 
+            data: any; 
+            bBoxes: { inside: { width: number; height: number } } 
+          }
+        ) {
+          try {
+            // 尝试直接从节点实例获取数据
+            let targetData = data;
+            // 检查节点实例上是否有_nodeData属性
+            if (node && node._nodeData && node._nodeData.data) {
+              targetData = node._nodeData.data;
+              console.log('从节点实例获取数据:', JSON.stringify(targetData, null, 2));
+            }
+            
+            // 递归函数，用于深度查找标签数据
+            const findTags = (obj: any): NodeTag[] | null => {
+              if (!obj) return null;
+              
+              // 根据文档，优先检查tag属性而不是tags
+              if (obj.tag) {
+                const tagData = obj.tag;
+                if (Array.isArray(tagData)) {
+                  console.log('找到tag数组:', tagData);
+                  return tagData;
+                }
+                if (typeof tagData === 'string') {
+                  console.log('找到单个tag:', tagData);
+                  return [tagData as NodeTag];
+                }
+              }
+              
+              // 兼容性检查tags属性
+              if (obj.tags && Array.isArray(obj.tags)) {
+                console.log('找到tags数组:', obj.tags);
+                return obj.tags;
+              }
+              
+              // 检查嵌套的data对象
+              if (obj.data) {
+                const tagsInData = findTags(obj.data);
+                if (tagsInData) return tagsInData;
+              }
+              
+              return null;
+            };
+            
+            // 查找标签数据
+            const tags = findTags(targetData);
+            
+            // 如果有有效的标签数组，则渲染标签指示器
+            if (tags && Array.isArray(tags) && tags.length > 0) {
+              console.log('准备渲染标签指示点:', tags);
+              const { width, height } = bBoxes.inside;
+              const x = -width / 2;
+              const y = -height / 2 - 6; // 放在节点上方
+              
+              // 渲染标签指示点
+              tags.forEach((tag: any, index: number) => {
+                const offsetX = index * 10 - ((tags?.length || 0) - 1) * 5;
+                
+                // 判断tag是否为有效的NodeTag
+                let tagValue: string;
+                if (typeof tag === 'string') {
+                  tagValue = tag;
+                } else if (tag && typeof tag === 'object' && 'value' in tag) {
+                  tagValue = tag.value;
+                } else {
+                  tagValue = String(tag);
+                }
+                
+                // 检查tagValue是否存在于NodeTag枚举中
+                if (Object.values(NodeTag).includes(tagValue as NodeTag)) {
+                  console.log('渲染标签:', tagValue, '颜色:', NODE_TAG_COLORS[tagValue as NodeTag]);
+                  
+                  ctx.fillStyle = NODE_TAG_COLORS[tagValue as NodeTag];
+                  ctx.beginPath();
+                  ctx.arc(offsetX, y, 4, 0, Math.PI * 2);
+                  ctx.fill();
+                  
+                  // 添加白色边框
+                  ctx.strokeStyle = 'white';
+                  ctx.lineWidth = 1;
+                  ctx.stroke();
+                } else {
+                  console.warn('无效的标签值:', tagValue);
+                }
+              });
+            }
+            
+            return false; // 不阻止默认渲染
+          } catch (error) {
+            console.error('自定义渲染标签出错:', error);
+            return false;
+          }
+        }
+      };
+      
       const options = {
         el: mindMapContainerRef.current,
         data: activeNoteData.data,
         theme: activeNoteData.theme || 'default',
         keypress: true,
         contextMenu: true,
-        nodeTextEdit: true
+        nodeTextEdit: true,
+        customRender
       };
-       console.log('create脑图实例');
+      
+      console.log('创建脑图实例');
       // 创建实例
       // @ts-ignore
       mindMapInstanceRef.current = new MindMap(options);
+      
+      // 保存对实例的全局引用，方便标签更新后触发重新渲染
+      if (typeof window !== 'undefined') {
+        window._mindMap = mindMapInstanceRef.current;
+      }
+
+      // 注册标签删除插件
+      if (mindMapInstanceRef.current) {
+        try {
+          mindMapInstanceRef.current.addPlugin(TagDeletePlugin);
+          console.log('标签删除插件注册成功');
+        } catch (e) {
+          console.error('标签删除插件注册失败:', e);
+        }
+      }
 
       // 初始化上次保存的数据
       lastSavedDataRef.current = JSON.parse(JSON.stringify(activeNoteData.data));
@@ -102,7 +236,87 @@ const MindMapEditor: React.FC = () => {
       mindMapInstanceRef.current.on('data_change', () => {
         // 在数据变化时触发保存
         saveData();
+        
+        // 强制重新渲染一次 - 解决标签不立即显示的问题
+        setTimeout(() => {
+          if (mindMapInstanceRef.current) {
+            try {
+              console.log('数据变化，触发重新渲染');
+              mindMapInstanceRef.current.render();
+            } catch (e) {
+              console.error('重新渲染失败:', e);
+            }
+          }
+        }, 100);
       });
+      
+      // 添加节点选择事件监听
+      try {
+        const instance = mindMapInstanceRef.current;
+        
+        const handleNodeActive = (node: any, nodes: any[]) => {
+          console.log('节点被选中', nodes ? nodes.length : 0);
+          if (Array.isArray(nodes)) {
+            setActiveNodesState(nodes);
+          } else if (node) {
+            setActiveNodesState([node]);
+          }
+        };
+        
+        // 尝试不同的事件绑定方式
+        if (typeof instance.on === 'function') {
+          instance.on('node_active', handleNodeActive);
+        } else if (instance.mindMap && typeof instance.mindMap.on === 'function') {
+          instance.mindMap.on('node_active', handleNodeActive);
+        } else if (instance.events && typeof instance.events.on === 'function') {
+          instance.events.on('node_active', handleNodeActive);
+        } else {
+          console.warn('无法找到合适的事件绑定方法');
+        }
+      } catch (error) {
+        console.error('注册节点选择事件失败', error);
+      }
+      
+      // 添加初始激活节点的逻辑
+      setTimeout(() => {
+        try {
+          const instance = mindMapInstanceRef.current;
+          if (!instance) return;
+          
+          const root = instance.renderer?.root || instance.mindMap?.renderer?.root || instance.root;
+          if (root) {
+            console.log('尝试激活根节点');
+            
+            // 使用与forceSelectNode相同的API调用方式
+            try {
+              if (typeof instance.renderer?.clearAllActive === 'function') {
+                instance.renderer.clearAllActive();
+              } else if (typeof instance.mindMap?.renderer?.clearAllActive === 'function') {
+                instance.mindMap.renderer.clearAllActive();
+              } else if (typeof instance.clearAllActive === 'function') {
+                instance.clearAllActive();
+              }
+              
+              if (typeof instance.renderer?.setNodeActive === 'function') {
+                instance.renderer.setNodeActive(root);
+              } else if (typeof instance.mindMap?.renderer?.setNodeActive === 'function') {
+                instance.mindMap.renderer.setNodeActive(root);
+              } else if (typeof instance.setNodeActive === 'function') {
+                instance.setNodeActive(root);
+              } else if (typeof instance.selectNode === 'function') {
+                instance.selectNode(root);
+              }
+              
+              // 手动更新activeNodesState
+              setActiveNodesState([root]);
+            } catch (e) {
+              console.error('尝试调用节点选择API失败', e);
+            }
+          }
+        } catch (error) {
+          console.error('初始激活节点失败:', error);
+        }
+      }, 500);
       
       return true;
     } catch (error) {
@@ -119,7 +333,50 @@ const MindMapEditor: React.FC = () => {
     return activeNoteData.filename || activeNoteData.name || activeNoteData.title || activeNoteData.id || null;
   }, [activeNoteData]);
 
-
+  // 添加一个简单的延迟执行函数
+  const delayForceNodeSelection = useCallback(() => {
+    // 延迟一下，确保实例完全初始化
+    setTimeout(() => {
+      if (mindMapInstanceRef.current) {
+        console.log('延迟执行节点选择');
+        // 这里不能直接调用forceSelectNode，因为它还未定义
+        
+        try {
+          const instance = mindMapInstanceRef.current;
+          const root = instance.renderer?.root || instance.mindMap?.renderer?.root || instance.root;
+          
+          if (root) {
+            console.log('延迟激活根节点', root);
+            
+            // 尝试不同的API调用方式
+            if (typeof instance.renderer?.clearAllActive === 'function') {
+              instance.renderer.clearAllActive();
+            } else if (typeof instance.mindMap?.renderer?.clearAllActive === 'function') {
+              instance.mindMap.renderer.clearAllActive();
+            } else if (typeof instance.clearAllActive === 'function') {
+              instance.clearAllActive();
+            }
+            
+            if (typeof instance.renderer?.setNodeActive === 'function') {
+              instance.renderer.setNodeActive(root);
+            } else if (typeof instance.mindMap?.renderer?.setNodeActive === 'function') {
+              instance.mindMap.renderer.setNodeActive(root);
+            } else if (typeof instance.setNodeActive === 'function') {
+              instance.setNodeActive(root);
+            } else if (typeof instance.selectNode === 'function') {
+              instance.selectNode(root);
+            }
+            
+            // 手动更新activeNodesState
+            setActiveNodesState([root]);
+          }
+        } catch (error) {
+          console.error('延迟节点选择失败:', error);
+        }
+      }
+    }, 800);
+  }, []);
+  
   // 处理首次加载
   useEffect(() => {
     // 如果已经初始化过，不再重复初始化
@@ -131,6 +388,7 @@ const MindMapEditor: React.FC = () => {
       
       // 创建实例
       const success = createMindMapInstance();
+      console.log('思维导图实例创建结果:', success);
       
       // 标记为已初始化
       setIsInitialized(true);
@@ -138,8 +396,11 @@ const MindMapEditor: React.FC = () => {
       
       // 记录当前文件名
       prevFileNameRef.current = getCurrentFileName();
+
+      // 延迟执行节点选择
+      delayForceNodeSelection();
     }
-  }, [activeNoteData, createMindMapInstance, isInitialized, getCurrentFileName]);
+  }, [activeNoteData, createMindMapInstance, isInitialized, getCurrentFileName, delayForceNodeSelection]);
 
   // 监听文件变化，在需要时创建或销毁实例
   useEffect(() => {
@@ -246,6 +507,220 @@ const MindMapEditor: React.FC = () => {
     };
   }, []);
 
+  // 添加点击节点主动触发的函数
+  const forceSelectNode = useCallback(() => {
+    if (!mindMapInstanceRef.current) return;
+    
+    try {
+      // 选择根节点 - 修复API调用
+      const instance = mindMapInstanceRef.current;
+      const root = instance.renderer?.root || instance.mindMap?.renderer?.root || instance.root;
+      
+      if (root) {
+        console.log('主动激活根节点', root);
+        
+        // 尝试不同的API调用方式
+        try {
+          if (typeof instance.renderer?.clearAllActive === 'function') {
+            instance.renderer.clearAllActive();
+          } else if (typeof instance.mindMap?.renderer?.clearAllActive === 'function') {
+            instance.mindMap.renderer.clearAllActive();
+          } else if (typeof instance.clearAllActive === 'function') {
+            instance.clearAllActive();
+          }
+          
+          if (typeof instance.renderer?.setNodeActive === 'function') {
+            instance.renderer.setNodeActive(root);
+          } else if (typeof instance.mindMap?.renderer?.setNodeActive === 'function') {
+            instance.mindMap.renderer.setNodeActive(root);
+          } else if (typeof instance.setNodeActive === 'function') {
+            instance.setNodeActive(root);
+          } else if (typeof instance.selectNode === 'function') {
+            instance.selectNode(root);
+          }
+        } catch (e) {
+          console.error('尝试调用节点选择API失败', e);
+        }
+        
+        // 手动更新activeNodesState
+        setActiveNodesState([root]);
+      } else {
+        console.warn('找不到根节点');
+      }
+    } catch (error) {
+      console.error('尝试选择节点失败:', error);
+    }
+  }, []);
+
+  // 点击思维导图背景时激活节点的处理
+  useEffect(() => {
+    if (!mindMapContainerRef.current || !mindMapInstanceRef.current) return;
+    
+    const container = mindMapContainerRef.current;
+    
+    const handleClick = () => {
+      // 如果当前没有选中的节点，尝试选中根节点
+      if (activeNodesState.length === 0) {
+        forceSelectNode();
+      }
+    };
+    
+    container.addEventListener('click', handleClick);
+    
+    return () => {
+      container.removeEventListener('click', handleClick);
+    };
+  }, [activeNodesState, forceSelectNode]);
+
+  // 初始化完成后自动选中根节点
+  useEffect(() => {
+    if (isInitialized && mindMapInstanceRef.current && activeNodesState.length === 0) {
+      forceSelectNode();
+    }
+  }, [isInitialized, activeNodesState, forceSelectNode]);
+
+  // 用于保持思维导图视图状态的包装函数
+  const withViewStatePreservation = useCallback(
+    (callback: any) => {
+      return (...args: any[]) => {
+        if (!mindMapInstanceRef.current) return;
+        
+        // 记录当前视图状态
+        const { translateX, translateY, scale } = mindMapInstanceRef.current;
+        
+        // 执行操作
+        callback(...args);
+        
+        // 恢复视图状态
+        mindMapInstanceRef.current.translateX = translateX;
+        mindMapInstanceRef.current.translateY = translateY;
+        mindMapInstanceRef.current.scale = scale;
+        
+        // 更新渲染
+        mindMapInstanceRef.current.render();
+      };
+    },
+    []
+  );
+
+  // 节点操作函数
+  const hasGeneralization = useMemo(() => {
+    if (!activeNodesState || activeNodesState.length === 0) return false;
+    
+    return activeNodesState.some((node) => {
+      try {
+        const data = node?.getData?.()?.data;
+        return data && data.generalization;
+      } catch (e) {
+        console.error('检查generalization属性出错', e);
+        return false;
+      }
+    });
+  }, [activeNodesState]);
+  
+  const hasRoot = useMemo(() => {
+    if (!activeNodesState || activeNodesState.length === 0) return false;
+    
+    return activeNodesState.some((node) => {
+      try {
+        const data = node?.getData?.()?.data;
+        return data && (data.isRoot || data.root);
+      } catch (e) {
+        console.error('检查isRoot属性出错', e);
+        return false;
+      }
+    });
+  }, [activeNodesState]);
+  
+  // 模态框操作
+  const handleInsertImage = useCallback(() => {
+    nodeModalsRef.current?.openImageModal();
+  }, []);
+  
+  const handleInsertIcon = useCallback(() => {
+    // 实现图标插入逻辑
+  }, []);
+  
+  const handleInsertLink = useCallback(() => {
+    nodeModalsRef.current?.openLinkModal();
+  }, []);
+  
+  const handleInsertNote = useCallback(() => {
+    nodeModalsRef.current?.openNoteModal();
+  }, []);
+  
+  const handleInsertTag = useCallback(() => {
+    console.log('尝试打开标签模态框', {
+      hasInstance: !!mindMapInstanceRef.current, 
+      activeNodes: activeNodesState?.length || 0,
+      hasModalRef: !!nodeModalsRef.current
+    });
+    
+    try {
+      // 先检查模态框引用是否存在
+      if (!nodeModalsRef.current) {
+        console.error('模态框引用不存在');
+        showFeedback('无法打开标签设置，请刷新页面重试', true);
+        return;
+      }
+      
+      // 检查是否有选中节点
+      if (!activeNodesState || activeNodesState.length === 0) {
+        // 如果没有选中节点，尝试自动选中根节点
+        forceSelectNode();
+        
+        // 显示提示消息
+        showFeedback('请先选择一个节点再设置标签', true);
+        return;
+      }
+      
+      // 如果有选中节点，直接打开标签模态框
+      nodeModalsRef.current.openTagModal();
+      
+    } catch (error) {
+      console.error('打开标签模态框失败:', error);
+      showFeedback('打开标签模态框失败', true);
+    }
+  }, [activeNodesState, forceSelectNode, showFeedback]);
+
+  // 在handleInsertTag后添加全局快捷键处理
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // 按键T时打开标签面板
+      if (e.key === 't' || e.key === 'T') {
+        if (activeNodesState.length > 0) {
+          e.preventDefault();
+          handleInsertTag();
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [activeNodesState, handleInsertTag]);
+
+  const handleAddGeneralization = useCallback(() => {
+    withViewStatePreservation(() => {
+      if (mindMapInstanceRef.current && activeNodesState.length > 0) {
+        mindMapInstanceRef.current.execCommand('ADD_GENERALIZATION', { text: '概要' });
+      }
+    })();
+  }, [withViewStatePreservation, activeNodesState]);
+  
+  const handleCreateAssociativeLine = useCallback(() => {
+    withViewStatePreservation(() => {
+      if (mindMapInstanceRef.current && 
+          activeNodesState.length > 0 && 
+          mindMapInstanceRef.current.associativeLine) {
+        mindMapInstanceRef.current.associativeLine.createLineFromActiveNode();
+      } else {
+        showFeedback('关联线插件未启用或没有选中节点', true);
+      }
+    })();
+  }, [withViewStatePreservation, activeNodesState, showFeedback]);
+
   return (
     <div className="mindmap-editor">
       {/* 状态反馈区域 - 现在总是显示 */}
@@ -261,11 +736,40 @@ const MindMapEditor: React.FC = () => {
           <p>从侧边栏选择一个笔记或创建新笔记开始</p>
         </div>
       ) : (
-        <div 
-          className="mindmap-container" 
-          ref={mindMapContainerRef}
-          style={{ width: '100%', height: 'calc(100vh - 60px)' }}
-        ></div>
+        <>
+          {/* 工具栏 - 始终显示，不依赖于activeNodesState */}
+          <div className="toolbar-container">
+            <MindMapToolbar
+              toolbarVisible={toolbarVisible}
+              toggleToolbar={() => setToolbarVisible(!toolbarVisible)}
+              activeNodes={activeNodesState}
+              hasGeneralization={hasGeneralization}
+              hasRoot={hasRoot}
+              onInsertImage={handleInsertImage}
+              onInsertIcon={handleInsertIcon}
+              onInsertLink={handleInsertLink}
+              onInsertNote={handleInsertNote}
+              onInsertTag={handleInsertTag}
+              onAddGeneralization={handleAddGeneralization}
+              onCreateAssociativeLine={handleCreateAssociativeLine}
+            />
+          </div>
+          
+          {/* 思维导图容器 */}
+          <div 
+            className="mindmap-container" 
+            ref={mindMapContainerRef}
+            style={{ width: '100%', height: 'calc(100vh - 120px)' }}
+          ></div>
+          
+          {/* 节点模态框 */}
+          <MindMapNodeModals
+            ref={nodeModalsRef}
+            activeNodes={activeNodesState}
+            withViewStatePreservation={withViewStatePreservation}
+            showFeedback={showFeedback}
+          />
+        </>
       )}
     </div>
   );

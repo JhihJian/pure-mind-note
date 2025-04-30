@@ -8,6 +8,9 @@ import MindMapToolbar from './MindMapToolbar';
 import MindMapNodeModals, { MindMapNodeModalsHandles } from './MindMapNodeModals';
 import { TagDeletePlugin } from '../plugins';
 import './MindMapEditor.css';
+import Drag from 'simple-mind-map/src/plugins/Drag.js'
+
+MindMap.usePlugin(Drag)
 
 // 常量定义
 const SIDEBAR_WIDTH = 280; // 侧边栏宽度

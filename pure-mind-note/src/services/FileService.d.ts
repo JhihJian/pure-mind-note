@@ -13,3 +13,5 @@ export declare function createNote(title: string, categoryId: string, subCategor
 export declare function createCategory(name: string): Promise<string>;
 export declare function createSubcategory(categoryId: string, name: string): Promise<string>;
 export declare function deleteCategory(categoryId: string): Promise<void>;
+export declare function deleteSubcategory(categoryId: string, subCategoryId: string): Promise<void>;
+export declare function deleteNote(noteId: string): Promise<void>;

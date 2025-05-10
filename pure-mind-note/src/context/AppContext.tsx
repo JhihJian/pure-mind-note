@@ -24,6 +24,8 @@ interface AppContextProps extends AppState {
   createNewCategory: (name: string) => Promise<void>;
   createNewSubcategory: (categoryId: string, name: string) => Promise<void>;
   deleteCategory: (categoryId: string) => Promise<void>;
+  deleteSubcategory: (categoryId: string, subCategoryId: string) => Promise<void>;
+  deleteNote: (noteId: string) => Promise<void>;
   setActiveNoteData: (data: MindMapData) => void;
   activeNoteData: MindMapData | null;
   updateUserConfig: (config: Partial<UserConfig>) => Promise<void>;
@@ -275,6 +277,57 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   };
   
+  // 删除子分类
+  const deleteSubcategory = async (categoryId: string, subCategoryId: string): Promise<void> => {
+    try {
+      await FileService.deleteSubcategory(categoryId, subCategoryId);
+      
+      // 更新状态
+      setState(prevState => ({
+        ...prevState,
+        categories: prevState.categories.map(category => 
+          category.id === categoryId
+            ? {
+                ...category,
+                subCategories: category.subCategories.filter(sub => sub.id !== subCategoryId)
+              }
+            : category
+        ),
+        // 同时删除该子分类下的所有笔记
+        notes: prevState.notes.filter(note => note.subCategoryId !== subCategoryId)
+      }));
+    } catch (error) {
+      console.error('删除子分类失败:', error);
+      throw error;
+    }
+  };
+  
+  // 删除笔记
+  const deleteNote = async (noteId: string): Promise<void> => {
+    try {
+      const noteToDelete = state.notes.find(note => note.id === noteId);
+      if (!noteToDelete) return;
+
+      await FileService.deleteNote(noteId);
+      
+      // 更新状态
+      setState(prevState => ({
+        ...prevState,
+        notes: prevState.notes.filter(note => note.id !== noteId),
+        // 如果删除的是当前活动的笔记，清除活动笔记
+        activeNote: prevState.activeNote?.id === noteId ? null : prevState.activeNote
+      }));
+
+      // 如果删除的是当前活动的笔记，清除笔记数据
+      if (state.activeNote?.id === noteId) {
+        setActiveNoteData(null);
+      }
+    } catch (error) {
+      console.error('删除笔记失败:', error);
+      throw error;
+    }
+  };
+  
   return (
     <AppContext.Provider value={{
       ...state,
@@ -287,6 +340,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       createNewCategory,
       createNewSubcategory,
       deleteCategory,
+      deleteSubcategory,
+      deleteNote,
       setActiveNoteData,
       activeNoteData,
       updateUserConfig

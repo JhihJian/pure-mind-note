@@ -253,4 +253,73 @@ pub fn delete_category(data_dir: String, category_id: String) -> Result<(), Stri
         .map_err(|e| format!("无法删除分类目录: {}", e))?;
     
     Ok(())
+}
+
+// 删除子分类
+#[tauri::command]
+pub fn delete_subcategory(data_dir: String, category_id: String, sub_category_id: String) -> Result<(), String> {
+    let subcategory_path = PathBuf::from(&data_dir).join(&category_id).join(&sub_category_id);
+    
+    // 检查目录是否存在
+    if !subcategory_path.exists() {
+        return Err(format!("子分类 '{}' 不存在", sub_category_id));
+    }
+    
+    // 删除目录及其所有内容
+    fs::remove_dir_all(&subcategory_path)
+        .map_err(|e| format!("无法删除子分类目录: {}", e))?;
+    
+    Ok(())
+}
+
+// 删除笔记
+#[tauri::command]
+pub fn delete_note(data_dir: String, note_id: String) -> Result<(), String> {
+    // 遍历所有分类和子分类来查找笔记
+    let base_path = PathBuf::from(&data_dir);
+    
+    // 遍历分类目录
+    for category_entry in fs::read_dir(&base_path).map_err(|e| format!("无法读取目录: {}", e))? {
+        if let Ok(category_dir) = category_entry {
+            let category_path = category_dir.path();
+            
+            // 确保这是一个目录
+            if category_path.is_dir() {
+                // 遍历子分类目录
+                for subcategory_entry in fs::read_dir(&category_path).map_err(|e| format!("无法读取子目录: {}", e))? {
+                    if let Ok(subcategory_dir) = subcategory_entry {
+                        let subcategory_path = subcategory_dir.path();
+                        
+                        // 如果是目录，则为子分类
+                        if subcategory_path.is_dir() {
+                            // 读取子分类目录中的所有JSON文件
+                            for note_entry in fs::read_dir(&subcategory_path).map_err(|e| format!("无法读取笔记: {}", e))? {
+                                if let Ok(note_file) = note_entry {
+                                    let note_path = note_file.path();
+                                    
+                                    // 确保这是一个JSON文件
+                                    if note_path.is_file() && note_path.extension().and_then(|ext| ext.to_str()) == Some("json") {
+                                        // 尝试解析文件名作为标题
+                                        let title = note_path.file_stem()
+                                            .and_then(|name| name.to_str())
+                                            .unwrap_or("未命名笔记")
+                                            .to_string();
+                                        
+                                        // 如果找到匹配的笔记ID，删除它
+                                        if title == note_id {
+                                            fs::remove_file(&note_path)
+                                                .map_err(|e| format!("无法删除笔记文件: {}", e))?;
+                                            return Ok(());
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    Err(format!("未找到ID为 '{}' 的笔记", note_id))
 } 

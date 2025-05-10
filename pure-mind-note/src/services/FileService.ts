@@ -318,4 +318,26 @@ export async function deleteCategory(categoryId: string): Promise<void> {
     console.error('删除分类失败:', error);
     throw new Error(`无法删除分类: ${error}`);
   }
+}
+
+// 删除子分类
+export async function deleteSubcategory(categoryId: string, subCategoryId: string): Promise<void> {
+  try {
+    const dataDir = await getDataDir();
+    await invoke('delete_subcategory', { dataDir, categoryId, subCategoryId });
+  } catch (error) {
+    console.error('删除子分类失败:', error);
+    throw new Error(`无法删除子分类: ${error}`);
+  }
+}
+
+// 删除笔记
+export async function deleteNote(noteId: string): Promise<void> {
+  try {
+    const dataDir = await getDataDir();
+    await invoke('delete_note', { dataDir, noteId });
+  } catch (error) {
+    console.error('删除笔记失败:', error);
+    throw new Error(`无法删除笔记: ${error}`);
+  }
 } 

@@ -2,6 +2,15 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useAppContext } from '../context/AppContext';
 import './Sidebar.css';
 
+interface ContextMenuState {
+  visible: boolean;
+  x: number;
+  y: number;
+  type: 'category' | 'subcategory' | 'note';
+  id: string;
+  parentId?: string;
+}
+
 const Sidebar: React.FC = () => {
   const { 
     categories, 
@@ -11,7 +20,9 @@ const Sidebar: React.FC = () => {
     createNewSubcategory,
     createNewNote,
     openNote,
-    deleteCategory
+    deleteCategory,
+    deleteSubcategory,
+    deleteNote
   } = useAppContext();
   
   const [newCategoryName, setNewCategoryName] = useState('');
@@ -24,6 +35,13 @@ const Sidebar: React.FC = () => {
   const [showAddSubcategoryForm, setShowAddSubcategoryForm] = useState(false);
   const [showAddNoteForm, setShowAddNoteForm] = useState(false);
   const [currentAddParentId, setCurrentAddParentId] = useState<string | null>(null);
+  const [contextMenu, setContextMenu] = useState<ContextMenuState>({
+    visible: false,
+    x: 0,
+    y: 0,
+    type: 'category',
+    id: ''
+  });
   
   const addMenuRef = useRef<HTMLDivElement>(null);
   
@@ -126,17 +144,52 @@ const Sidebar: React.FC = () => {
     setShowAddNoteForm(true);
   };
   
-  // 删除分类
-  const handleDeleteCategory = async (categoryId: string, event: React.MouseEvent) => {
-    event.stopPropagation();
-    if (window.confirm('确定要删除此分类吗？')) {
-      try {
-        await deleteCategory(categoryId);
-      } catch (error) {
-        alert(`删除分类失败: ${error}`);
-      }
-    }
+  // 处理右键菜单
+  const handleContextMenu = (e: React.MouseEvent, type: 'category' | 'subcategory' | 'note', id: string, parentId?: string) => {
+    e.preventDefault();
+    setContextMenu({
+      visible: true,
+      x: e.clientX,
+      y: e.clientY,
+      type,
+      id,
+      parentId
+    });
   };
+
+  // 关闭右键菜单
+  const closeContextMenu = () => {
+    setContextMenu(prev => ({ ...prev, visible: false }));
+  };
+
+  // 处理删除操作
+  const handleDelete = async () => {
+    try {
+      if (contextMenu.type === 'category') {
+        if (window.confirm('确定要删除此分类吗？')) {
+          await deleteCategory(contextMenu.id);
+        }
+      } else if (contextMenu.type === 'subcategory' && contextMenu.parentId) {
+        if (window.confirm('确定要删除此子分类吗？删除后将无法恢复。')) {
+          await deleteSubcategory(contextMenu.parentId, contextMenu.id);
+        }
+      } else if (contextMenu.type === 'note') {
+        if (window.confirm('确定要删除此笔记吗？删除后将无法恢复。')) {
+          await deleteNote(contextMenu.id);
+        }
+      }
+    } catch (error) {
+      alert(`删除失败: ${error}`);
+    }
+    closeContextMenu();
+  };
+
+  // 点击其他地方时关闭右键菜单
+  useEffect(() => {
+    const handleClick = () => closeContextMenu();
+    document.addEventListener('click', handleClick);
+    return () => document.removeEventListener('click', handleClick);
+  }, []);
   
   return (
     <div className="sidebar">
@@ -251,6 +304,24 @@ const Sidebar: React.FC = () => {
         </div>
       )}
       
+      {/* 右键菜单 */}
+      {contextMenu.visible && (
+        <div 
+          className="context-menu"
+          style={{ 
+            position: 'fixed',
+            top: contextMenu.y,
+            left: contextMenu.x,
+            zIndex: 1000
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="context-menu-item" onClick={handleDelete}>
+            删除
+          </div>
+        </div>
+      )}
+      
       {/* 主内容区 - 分类和笔记列表 */}
       <div className="categories-container">
         {categories.length === 0 ? (
@@ -264,6 +335,7 @@ const Sidebar: React.FC = () => {
                 <div 
                   className={`category-item ${selectedCategoryId === category.id ? 'active' : ''}`}
                   onClick={() => selectCategory(category.id)}
+                  onContextMenu={(e) => handleContextMenu(e, 'category', category.id)}
                 >
                   <span 
                     className="category-toggle"
@@ -280,13 +352,6 @@ const Sidebar: React.FC = () => {
                   >
                     <span className="small-icon">+</span>
                   </button>
-                  <button 
-                    className="action-button delete-category-button"
-                    onClick={(e) => handleDeleteCategory(category.id, e)}
-                    title="删除分类"
-                  >
-                    <span className="small-icon">🗑</span>
-                  </button>
                 </div>
                 
                 {expandedCategories[category.id] && (
@@ -297,6 +362,7 @@ const Sidebar: React.FC = () => {
                         <div 
                           className={`subcategory-item ${selectedSubCategoryId === subCategory.id ? 'active' : ''}`}
                           onClick={() => selectSubCategory(subCategory.id)}
+                          onContextMenu={(e) => handleContextMenu(e, 'subcategory', subCategory.id, category.id)}
                         >
                           <span className="subcategory-icon">📂</span>
                           <span className="subcategory-name">{subCategory.name}</span>
@@ -316,6 +382,7 @@ const Sidebar: React.FC = () => {
                               key={note.id} 
                               className={`note-item ${activeNote?.id === note.id ? 'active' : ''}`}
                               onClick={() => handleOpenNote(note.id)}
+                              onContextMenu={(e) => handleContextMenu(e, 'note', note.id)}
                             >
                               <span className="note-icon">📝</span>
                               <span className="note-title">{note.title}</span>

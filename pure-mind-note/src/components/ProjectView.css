@@ -1,0 +1,94 @@
+.project-view {
+  padding: 20px;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.project-view h2 {
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.project-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.project-item {
+  padding: 15px;
+  border-radius: 8px;
+  background-color: #f5f5f5;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.project-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.project-icon {
+  font-size: 20px;
+}
+
+.project-name {
+  font-size: 16px;
+  font-weight: 500;
+  color: #333;
+}
+
+.progress-list {
+  margin-left: 30px;
+}
+
+.progress-list h3 {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 10px;
+}
+
+.progress-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 0;
+}
+
+.progress-icon {
+  font-size: 16px;
+  color: #2196F3;
+}
+
+.progress-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.progress-text {
+  font-size: 14px;
+  color: #444;
+  line-height: 1.4;
+}
+
+.progress-date {
+  font-size: 12px;
+  color: #666;
+  font-style: italic;
+}
+
+.no-progress {
+  margin-left: 30px;
+  color: #666;
+  font-style: italic;
+  font-size: 14px;
+}
+
+.no-projects {
+  text-align: center;
+  color: #666;
+  padding: 40px;
+  font-style: italic;
+} 

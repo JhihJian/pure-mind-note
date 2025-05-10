@@ -141,7 +141,7 @@ const Sidebar: React.FC = () => {
   return (
     <div className="sidebar">
       <div className="sidebar-header">
-        <h2>脑图笔记本</h2>
+        <h2>脑图记事本</h2>
         <div className="sidebar-actions">
           <button 
             className="action-button add-button" 

@@ -5,6 +5,9 @@ import './ViewSelector.css';
 export enum ViewType {
   MINDMAP = 'mindmap',
   JSON = 'json',
+  TODO = 'todo',
+  QUESTION = 'question',
+  PROJECT = 'project',
   // 在此扩展其他视图类型
 }
 
@@ -33,6 +36,30 @@ const ViewSelector: React.FC<ViewSelectorProps> = ({ currentView, onViewChange }
       >
         <span className="icon">📄</span>
         <span className="text">JSON视图</span>
+      </button>
+      <button
+        className={`view-button ${currentView === ViewType.TODO ? 'active' : ''}`}
+        onClick={() => onViewChange(ViewType.TODO)}
+        title="TODO视图"
+      >
+        <span className="icon">✅</span>
+        <span className="text">TODO视图</span>
+      </button>
+      <button
+        className={`view-button ${currentView === ViewType.QUESTION ? 'active' : ''}`}
+        onClick={() => onViewChange(ViewType.QUESTION)}
+        title="问题视图"
+      >
+        <span className="icon">❓</span>
+        <span className="text">问题视图</span>
+      </button>
+      <button
+        className={`view-button ${currentView === ViewType.PROJECT ? 'active' : ''}`}
+        onClick={() => onViewChange(ViewType.PROJECT)}
+        title="项目进展视图"
+      >
+        <span className="icon">📊</span>
+        <span className="text">项目进展</span>
       </button>
     </div>
   );

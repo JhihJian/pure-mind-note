@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import Sidebar from './components/Sidebar';
 import MindMapEditor from './components/MindMapEditor';
 import JsonViewer from './components/JsonViewer';
+import TodoView from './components/TodoView';
+import QuestionView from './components/QuestionView';
+import ProjectView from './components/ProjectView';
 import Settings from './components/Settings';
 import ViewSelector, { ViewType } from './components/ViewSelector';
 import { AppProvider, useAppContext } from './context/AppContext';
@@ -13,11 +16,22 @@ const AppContent: React.FC = () => {
   const [showSettings, setShowSettings] = useState(false);
   const [isWorkspaceReady, setIsWorkspaceReady] = useState(false);
   const [currentView, setCurrentView] = useState<ViewType>(ViewType.MINDMAP);
-  const { activeNoteData } = useAppContext();
+  const { activeNoteData, setActiveNoteData } = useAppContext();
 
   // 处理视图切换
   const handleViewChange = (view: ViewType) => {
     setCurrentView(view);
+  };
+
+  // 处理 TODO 状态变更
+  const handleTodoStatusChange = (nodeId: string, completed: boolean) => {
+    if (activeNoteData) {
+      const updatedData = { ...activeNoteData };
+      if (updatedData.data[nodeId]) {
+        updatedData.data[nodeId].data.completed = completed;
+        setActiveNoteData(updatedData);
+      }
+    }
   };
 
   // 根据当前视图渲染不同的内容
@@ -25,6 +39,12 @@ const AppContent: React.FC = () => {
     switch (currentView) {
       case ViewType.JSON:
         return <JsonViewer data={activeNoteData} />;
+      case ViewType.TODO:
+        return <TodoView data={activeNoteData} onTodoStatusChange={handleTodoStatusChange} />;
+      case ViewType.QUESTION:
+        return <QuestionView data={activeNoteData} />;
+      case ViewType.PROJECT:
+        return <ProjectView data={activeNoteData} />;
       case ViewType.MINDMAP:
       default:
         return <MindMapEditor />;

@@ -64,7 +64,8 @@ export enum NodeTag {
   PROGRESS = 'progress',   // 进展
   TODO = 'todo',           // TODO
   NOTE = 'note',           // 笔记
-  WORK_OBJECT = 'work_object' // 工作对象
+  WORK_OBJECT = 'work_object', // 工作对象
+  QUESTION = 'question'    // 问题
 }
 
 // 标签显示文本映射
@@ -73,7 +74,8 @@ export const NODE_TAG_LABELS: Record<NodeTag, string> = {
   [NodeTag.PROGRESS]: '进展',
   [NodeTag.TODO]: 'TODO',
   [NodeTag.NOTE]: '笔记',
-  [NodeTag.WORK_OBJECT]: '工作对象'
+  [NodeTag.WORK_OBJECT]: '工作对象',
+  [NodeTag.QUESTION]: '问题'
 };
 
 // 标签颜色映射
@@ -82,7 +84,8 @@ export const NODE_TAG_COLORS: Record<NodeTag, string> = {
   [NodeTag.PROGRESS]: '#2196F3',  // 蓝色
   [NodeTag.TODO]: '#FF9800',      // 橙色
   [NodeTag.NOTE]: '#9C27B0',      // 紫色
-  [NodeTag.WORK_OBJECT]: '#E91E63' // 粉红色
+  [NodeTag.WORK_OBJECT]: '#E91E63', // 粉红色
+  [NodeTag.QUESTION]: '#FF5722'   // 深橙色
 };
 
 // 扩展脑图数据类型中的节点数据，添加标签字段

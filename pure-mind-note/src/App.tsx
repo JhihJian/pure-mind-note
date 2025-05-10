@@ -62,7 +62,7 @@ const AppContent: React.FC = () => {
       <Sidebar />
       <div className="main-content">
         <div className="app-header">
-          <h1>脑图笔记本</h1>
+          <h1>静心记</h1>
           <div className="app-header-right">
             <ViewSelector 
               currentView={currentView} 

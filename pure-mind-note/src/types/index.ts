@@ -6,6 +6,7 @@ export interface NoteMetadata {
   categoryId: string;
   subCategoryId?: string;
   lastUpdated: string;
+  type: NotebookType;
 }
 
 // 分类类型
@@ -64,7 +65,6 @@ export enum NodeTag {
   PROGRESS = 'progress',   // 进展
   TODO = 'todo',           // TODO
   NOTE = 'note',           // 笔记
-  WORK_OBJECT = 'work_object', // 工作对象
   QUESTION = 'question'    // 问题
 }
 
@@ -74,7 +74,6 @@ export const NODE_TAG_LABELS: Record<NodeTag, string> = {
   [NodeTag.PROGRESS]: '进展',
   [NodeTag.TODO]: 'TODO',
   [NodeTag.NOTE]: '笔记',
-  [NodeTag.WORK_OBJECT]: '工作对象',
   [NodeTag.QUESTION]: '问题'
 };
 
@@ -84,7 +83,6 @@ export const NODE_TAG_COLORS: Record<NodeTag, string> = {
   [NodeTag.PROGRESS]: '#2196F3',  // 蓝色
   [NodeTag.TODO]: '#FF9800',      // 橙色
   [NodeTag.NOTE]: '#9C27B0',      // 紫色
-  [NodeTag.WORK_OBJECT]: '#E91E63', // 粉红色
   [NodeTag.QUESTION]: '#FF5722'   // 深橙色
 };
 
@@ -94,4 +92,37 @@ export interface MindMapNodeData {
   text: string;
   tags?: NodeTag[];
   [key: string]: any;
+}
+
+// 记事本类型枚举
+export enum NotebookType {
+  MINDMAP = 'mindmap',    // 思维导图
+  MARKDOWN = 'markdown'   // Markdown
+}
+
+// 记事本基础接口
+export interface BaseNotebook {
+  id: string;
+  title: string;
+  type: NotebookType;
+  lastUpdated: string;
+}
+
+// 思维导图记事本
+export interface MindMapNotebook extends BaseNotebook {
+  type: NotebookType.MINDMAP;
+  rootId: string;
+  theme?: string;
+  data: {
+    [key: string]: {
+      data: MindMapNodeData;
+      children?: string[];
+    };
+  };
+}
+
+// Markdown记事本
+export interface MarkdownNotebook extends BaseNotebook {
+  type: NotebookType.MARKDOWN;
+  content: string;
 } 

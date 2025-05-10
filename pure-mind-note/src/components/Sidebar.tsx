@@ -1,12 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAppContext } from '../context/AppContext';
 import './Sidebar.css';
+import NotebookTypeSelector from './NotebookTypeSelector';
+import { NotebookType } from '../types';
 
 interface ContextMenuState {
   visible: boolean;
   x: number;
   y: number;
-  type: 'category' | 'subcategory' | 'note';
+  type: 'category' | 'subcategory' | 'note' | 'sidebar';
   id: string;
   parentId?: string;
 }
@@ -22,7 +24,8 @@ const Sidebar: React.FC = () => {
     openNote,
     deleteCategory,
     deleteSubcategory,
-    deleteNote
+    deleteNote,
+    loadNotes
   } = useAppContext();
   
   const [newCategoryName, setNewCategoryName] = useState('');
@@ -42,6 +45,7 @@ const Sidebar: React.FC = () => {
     type: 'category',
     id: ''
   });
+  const [selectedNotebookType, setSelectedNotebookType] = useState<NotebookType>(NotebookType.MINDMAP);
   
   const addMenuRef = useRef<HTMLDivElement>(null);
   
@@ -145,7 +149,7 @@ const Sidebar: React.FC = () => {
   };
   
   // 处理右键菜单
-  const handleContextMenu = (e: React.MouseEvent, type: 'category' | 'subcategory' | 'note', id: string, parentId?: string) => {
+  const handleContextMenu = (e: React.MouseEvent, type: 'category' | 'subcategory' | 'note' | 'sidebar', id: string, parentId?: string) => {
     e.preventDefault();
     setContextMenu({
       visible: true,
@@ -191,21 +195,196 @@ const Sidebar: React.FC = () => {
     return () => document.removeEventListener('click', handleClick);
   }, []);
   
+  const handleCreateNote = async () => {
+    if (!selectedCategoryId) {
+      alert('请先选择一个分类');
+      return;
+    }
+
+    const title = prompt('请输入笔记标题：');
+    if (!title) return;
+
+    try {
+      await createNewNote(title, selectedCategoryId, selectedSubCategoryId || undefined);
+      alert('笔记创建成功');
+      // 刷新笔记列表
+      loadNotes();
+    } catch (error) {
+      alert(`创建笔记失败: ${error}`);
+    }
+  };
+
+  // 处理右键菜单项点击
+  const handleContextMenuAction = (action: 'add' | 'delete', menuType?: string) => {
+    if (action === 'add') {
+      if (contextMenu.type === 'sidebar') {
+        setShowAddCategoryForm(true);
+      } else if (contextMenu.type === 'category') {
+        if (menuType === 'subcategory') {
+          setCurrentAddParentId(contextMenu.id);
+          setShowAddSubcategoryForm(true);
+        } else if (menuType === 'note') {
+          setCurrentAddParentId(contextMenu.id);
+          setShowAddNoteForm(true);
+        }
+      } else if (contextMenu.type === 'subcategory') {
+        setCurrentAddParentId(contextMenu.id);
+        setShowAddNoteForm(true);
+      }
+    } else if (action === 'delete') {
+      handleDelete();
+    }
+    closeContextMenu();
+  };
+
   return (
     <div className="sidebar">
       <div className="sidebar-header">
-        <h2>脑图记事本</h2>
-        <div className="sidebar-actions">
-          <button 
-            className="action-button add-button" 
-            onClick={() => setShowAddCategoryForm(true)}
-            title="添加分类"
+        <div className="notebook-type-buttons">
+          <button
+            className={`type-button ${selectedNotebookType === NotebookType.MINDMAP ? 'active' : ''}`}
+            onClick={() => setSelectedNotebookType(NotebookType.MINDMAP)}
           >
-            <span className="icon">+</span>
+            脑图记事本
+          </button>
+          <button
+            className={`type-button ${selectedNotebookType === NotebookType.MARKDOWN ? 'active' : ''}`}
+            onClick={() => setSelectedNotebookType(NotebookType.MARKDOWN)}
+          >
+            Markdown记事本
           </button>
         </div>
       </div>
       
+      <div 
+        className="categories-container"
+        onContextMenu={(e) => {
+          if (e.target === e.currentTarget) {
+            handleContextMenu(e, 'sidebar', '');
+          }
+        }}
+      >
+        {categories.length === 0 ? (
+          <div className="empty-state">
+            <p>在空白处右键点击创建您的第一个分类</p>
+          </div>
+        ) : (
+          <div className="categories-list">
+            {categories.map(category => (
+              <div key={category.id} className="category">
+                <div 
+                  className={`category-item ${selectedCategoryId === category.id ? 'active' : ''}`}
+                  onClick={() => selectCategory(category.id)}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleContextMenu(e, 'category', category.id);
+                  }}
+                >
+                  <span 
+                    className="category-toggle"
+                    onClick={(e) => toggleCategory(category.id, e)}
+                  >
+                    {expandedCategories[category.id] ? '▼' : '▶'}
+                  </span>
+                  <span className="category-icon">📁</span>
+                  <span className="category-name">{category.name}</span>
+                </div>
+                
+                {expandedCategories[category.id] && (
+                  <div className="category-content">
+                    {/* 子分类 */}
+                    {category.subCategories.map(subCategory => (
+                      <div key={subCategory.id} className="subcategory">
+                        <div 
+                          className={`subcategory-item ${selectedSubCategoryId === subCategory.id ? 'active' : ''}`}
+                          onClick={() => selectSubCategory(subCategory.id)}
+                          onContextMenu={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleContextMenu(e, 'subcategory', subCategory.id, category.id);
+                          }}
+                        >
+                          <span className="subcategory-icon">📂</span>
+                          <span className="subcategory-name">{subCategory.name}</span>
+                        </div>
+                        
+                        {/* 子分类下的笔记 */}
+                        <div className="notes-list">
+                          {getFilteredNotes(category.id, subCategory.id).map(note => (
+                            <div 
+                              key={note.id} 
+                              className={`note-item ${activeNote?.id === note.id ? 'active' : ''}`}
+                              onClick={() => handleOpenNote(note.id)}
+                              onContextMenu={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleContextMenu(e, 'note', note.id);
+                              }}
+                            >
+                              <span className="note-icon">📝</span>
+                              <span className="note-title">{note.title}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* 右键菜单 */}
+      {contextMenu.visible && (
+        <div 
+          className="context-menu"
+          style={{ 
+            position: 'fixed',
+            top: contextMenu.y,
+            left: contextMenu.x,
+            zIndex: 1000
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {contextMenu.type === 'sidebar' && (
+            <div className="context-menu-item" onClick={() => handleContextMenuAction('add')}>
+              新建分类
+            </div>
+          )}
+          {contextMenu.type === 'category' && (
+            <>
+              <div className="context-menu-item" onClick={() => handleContextMenuAction('add', 'subcategory')}>
+                新建子分类
+              </div>
+              <div className="context-menu-item" onClick={() => handleContextMenuAction('add', 'note')}>
+                新建笔记
+              </div>
+              <div className="context-menu-item" onClick={() => handleContextMenuAction('delete')}>
+                删除分类
+              </div>
+            </>
+          )}
+          {contextMenu.type === 'subcategory' && (
+            <>
+              <div className="context-menu-item" onClick={() => handleContextMenuAction('add')}>
+                新建笔记
+              </div>
+              <div className="context-menu-item" onClick={() => handleContextMenuAction('delete')}>
+                删除子分类
+              </div>
+            </>
+          )}
+          {contextMenu.type === 'note' && (
+            <div className="context-menu-item" onClick={() => handleContextMenuAction('delete')}>
+              删除笔记
+            </div>
+          )}
+        </div>
+      )}
+
       {/* 添加分类表单 */}
       {showAddCategoryForm && (
         <div className="form-panel">
@@ -303,101 +482,6 @@ const Sidebar: React.FC = () => {
           </div>
         </div>
       )}
-      
-      {/* 右键菜单 */}
-      {contextMenu.visible && (
-        <div 
-          className="context-menu"
-          style={{ 
-            position: 'fixed',
-            top: contextMenu.y,
-            left: contextMenu.x,
-            zIndex: 1000
-          }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div className="context-menu-item" onClick={handleDelete}>
-            删除
-          </div>
-        </div>
-      )}
-      
-      {/* 主内容区 - 分类和笔记列表 */}
-      <div className="categories-container">
-        {categories.length === 0 ? (
-          <div className="empty-state">
-            <p>点击 "+" 按钮创建您的第一个分类</p>
-          </div>
-        ) : (
-          <div className="categories-list">
-            {categories.map(category => (
-              <div key={category.id} className="category">
-                <div 
-                  className={`category-item ${selectedCategoryId === category.id ? 'active' : ''}`}
-                  onClick={() => selectCategory(category.id)}
-                  onContextMenu={(e) => handleContextMenu(e, 'category', category.id)}
-                >
-                  <span 
-                    className="category-toggle"
-                    onClick={(e) => toggleCategory(category.id, e)}
-                  >
-                    {expandedCategories[category.id] ? '▼' : '▶'}
-                  </span>
-                  <span className="category-icon">📁</span>
-                  <span className="category-name">{category.name}</span>
-                  <button 
-                    className="action-button add-subcategory-button"
-                    onClick={(e) => showAddSubcategoryFormHandler(category.id, e)}
-                    title="添加子分类"
-                  >
-                    <span className="small-icon">+</span>
-                  </button>
-                </div>
-                
-                {expandedCategories[category.id] && (
-                  <div className="category-content">
-                    {/* 子分类 */}
-                    {category.subCategories.map(subCategory => (
-                      <div key={subCategory.id} className="subcategory">
-                        <div 
-                          className={`subcategory-item ${selectedSubCategoryId === subCategory.id ? 'active' : ''}`}
-                          onClick={() => selectSubCategory(subCategory.id)}
-                          onContextMenu={(e) => handleContextMenu(e, 'subcategory', subCategory.id, category.id)}
-                        >
-                          <span className="subcategory-icon">📂</span>
-                          <span className="subcategory-name">{subCategory.name}</span>
-                          <button 
-                            className="action-button add-note-button"
-                            onClick={(e) => showAddNoteFormHandler(subCategory.id, e)}
-                            title="添加笔记"
-                          >
-                            <span className="small-icon">+</span>
-                          </button>
-                        </div>
-                        
-                        {/* 子分类下的笔记 */}
-                        <div className="notes-list">
-                          {getFilteredNotes(category.id, subCategory.id).map(note => (
-                            <div 
-                              key={note.id} 
-                              className={`note-item ${activeNote?.id === note.id ? 'active' : ''}`}
-                              onClick={() => handleOpenNote(note.id)}
-                              onContextMenu={(e) => handleContextMenu(e, 'note', note.id)}
-                            >
-                              <span className="note-icon">📝</span>
-                              <span className="note-title">{note.title}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
     </div>
   );
 };

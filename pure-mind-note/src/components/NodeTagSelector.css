@@ -1,5 +1,8 @@
 .node-tag-selector {
   width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 10px;
 }
 
 .tag-list {
@@ -7,6 +10,8 @@
   flex-wrap: wrap;
   gap: 8px;
   margin-top: 10px;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .tag-item {
@@ -17,6 +22,10 @@
   transition: all 0.2s;
   font-size: 12px;
   user-select: none;
+  white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .tag-item:hover:not(.read-only) {
@@ -38,6 +47,8 @@
   flex-wrap: wrap;
   gap: 4px;
   margin-top: 5px;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .tag-badge {
@@ -45,6 +56,10 @@
   border-radius: 10px;
   font-size: 10px;
   color: white;
+  white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* 标签操作区域样式 */
@@ -52,6 +67,8 @@
   display: flex;
   justify-content: flex-end;
   margin-bottom: 8px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .clear-tags-btn {
@@ -63,6 +80,7 @@
   font-size: 12px;
   cursor: pointer;
   transition: background-color 0.2s;
+  white-space: nowrap;
 }
 
 .clear-tags-btn:hover {

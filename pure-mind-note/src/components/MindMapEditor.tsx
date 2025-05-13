@@ -9,6 +9,11 @@ import MindMapNodeModals, { MindMapNodeModalsHandles } from './MindMapNodeModals
 import { TagDeletePlugin } from '../plugins';
 import './MindMapEditor.css';
 import Drag from 'simple-mind-map/src/plugins/Drag.js'
+// @ts-ignore
+import Themes from 'simple-mind-map-plugin-themes';
+
+// 注册主题插件
+Themes.init(MindMap);
 
 MindMap.usePlugin(Drag)
 
@@ -205,7 +210,7 @@ const MindMapEditor: React.FC = () => {
       const options = {
         el: mindMapContainerRef.current,
         data: activeNoteData.data,
-        theme: activeNoteData.theme || 'default',
+        theme: activeNoteData.theme || 'classic10',
         keypress: true,
         contextMenu: true,
         nodeTextEdit: true,

@@ -30,12 +30,12 @@ const ViewSelector: React.FC<ViewSelectorProps> = ({ currentView, onViewChange }
         <span className="text">脑图视图</span>
       </button>
       <button
-        className={`view-button ${currentView === ViewType.JSON ? 'active' : ''}`}
-        onClick={() => onViewChange(ViewType.JSON)}
-        title="JSON视图"
+        className={`view-button ${currentView === ViewType.PROJECT ? 'active' : ''}`}
+        onClick={() => onViewChange(ViewType.PROJECT)}
+        title="项目进展视图"
       >
-        <span className="icon">📄</span>
-        <span className="text">JSON视图</span>
+        <span className="icon">📊</span>
+        <span className="text">项目进展</span>
       </button>
       <button
         className={`view-button ${currentView === ViewType.TODO ? 'active' : ''}`}
@@ -53,13 +53,14 @@ const ViewSelector: React.FC<ViewSelectorProps> = ({ currentView, onViewChange }
         <span className="icon">❓</span>
         <span className="text">问题视图</span>
       </button>
+
       <button
-        className={`view-button ${currentView === ViewType.PROJECT ? 'active' : ''}`}
-        onClick={() => onViewChange(ViewType.PROJECT)}
-        title="项目进展视图"
+        className={`view-button ${currentView === ViewType.JSON ? 'active' : ''}`}
+        onClick={() => onViewChange(ViewType.JSON)}
+        title="JSON视图"
       >
-        <span className="icon">📊</span>
-        <span className="text">项目进展</span>
+        <span className="icon">📄</span>
+        <span className="text">JSON视图</span>
       </button>
     </div>
   );

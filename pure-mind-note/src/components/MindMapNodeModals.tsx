@@ -210,6 +210,17 @@ const MindMapNodeModals = forwardRef<MindMapNodeModalsHandles, Props>(
                 } else {
                   node.setTag(tags);
                   console.log('已使用官方setTag方法更新节点标签');
+                  
+                  // 通过mindMap实例发出标签设置事件
+                  try {
+                    if (node.mindMap && typeof node.mindMap.emit === 'function') {
+                      node.mindMap.emit('set_node_tag', node);
+                    } else {
+                      console.log('无法通过mindMap实例发送set_node_tag事件');
+                    }
+                  } catch (emitError) {
+                    console.error('发送set_node_tag事件失败:', emitError);
+                  }
                 }
                 updateSuccess = true;
               }

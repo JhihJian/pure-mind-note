@@ -6,7 +6,7 @@ import { NodeTag, NODE_TAG_COLORS } from '../types';
 import { NodeTagDisplay } from './NodeTagSelector';
 import MindMapToolbar from './MindMapToolbar';
 import MindMapNodeModals, { MindMapNodeModalsHandles } from './MindMapNodeModals';
-import { TagDeletePlugin } from '../plugins';
+import { TagDeletePlugin, TagCreationTimePlugin } from '../plugins';
 import './MindMapEditor.css';
 import Drag from 'simple-mind-map/src/plugins/Drag.js'
 // @ts-ignore
@@ -16,7 +16,7 @@ import Themes from 'simple-mind-map-plugin-themes';
 Themes.init(MindMap);
 
 MindMap.usePlugin(Drag)
-
+MindMap.usePlugin(TagCreationTimePlugin)
 // 常量定义
 const SIDEBAR_WIDTH = 280; // 侧边栏宽度
 const HEADER_HEIGHT = 60; // 头部高度
@@ -232,8 +232,12 @@ const MindMapEditor: React.FC = () => {
         try {
           mindMapInstanceRef.current.addPlugin(TagDeletePlugin);
           console.log('标签删除插件注册成功');
+          
+          // 注册节点创建时间插件
+          mindMapInstanceRef.current.addPlugin(NodeCreationTimePlugin);
+          console.log('节点创建时间插件注册成功');
         } catch (e) {
-          console.error('标签删除插件注册失败:', e);
+          console.error('插件注册失败:', e);
         }
       }
 

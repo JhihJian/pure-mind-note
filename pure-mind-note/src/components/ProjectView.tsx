@@ -38,7 +38,10 @@ const ProjectView: React.FC<ProjectViewProps> = ({ data }) => {
                 progress.push({
                   id: `${nodeId}_progress_${index}`,
                   text: child.data.text || '',
-                  date: child.data.date || new Date().toISOString().split('T')[0]
+                  date: (child.data.tagCreateTime ? 
+                    `${child.data.tagCreateTime.split('T')[0]} ${child.data.tagCreateTime.split('T')[1].substring(0, 5)}` 
+                    : child.data.date) || 
+                    `${new Date().toISOString().split('T')[0]} ${new Date().toISOString().split('T')[1].substring(0, 5)}`
                 });
               }
             });

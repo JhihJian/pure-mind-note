@@ -7,6 +7,7 @@ declare global {
             saveCurrentNote?: (data: any) => void;
             [key: string]: any;
         };
+        _mindMap?: any;
     }
 }
 declare const MindMapEditor: React.FC;

@@ -1,4 +1,4 @@
-import { NoteMetadata, MindMapData, Category, SubCategory } from '../types';
+import { NoteMetadata, MindMapData, Category, SubCategory, NotebookType } from '../types';
 import { invoke } from '@tauri-apps/api/core';
 import { BaseDirectory, exists, mkdir } from '@tauri-apps/plugin-fs';
 import { appDataDir, normalize } from '@tauri-apps/api/path';
@@ -223,7 +223,8 @@ export async function getAllNotes(): Promise<NoteMetadata[]> {
         path: note.path,
         categoryId: note.category_id,
         subCategoryId: note.sub_category_id,
-        lastUpdated: note.last_updated
+        lastUpdated: note.last_updated,
+        type: NotebookType.MINDMAP  // 默认设置为思维导图类型
       }));
     } catch (error) {
       console.warn('获取笔记列表失败，可能在开发环境中:', error);
@@ -279,7 +280,8 @@ export async function createNote(
       path: notePath,
       categoryId,
       subCategoryId,
-      lastUpdated: initialData.lastUpdated
+      lastUpdated: initialData.lastUpdated,
+      type: NotebookType.MINDMAP  // 设置默认类型为思维导图
     };
   } catch (error) {
     console.error('创建笔记失败:', error);

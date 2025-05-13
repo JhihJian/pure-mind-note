@@ -1,8 +1,8 @@
 import React from 'react';
 import './MindMapEditor.css';
 interface MindMapToolbarProps {
-    toolbarVisible: boolean;
     toggleToolbar: () => void;
+    toolbarVisible: boolean;
     activeNodes: any[];
     hasGeneralization: boolean;
     hasRoot: boolean;

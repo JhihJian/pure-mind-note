@@ -10,6 +10,8 @@ interface AppContextProps extends AppState {
     createNewCategory: (name: string) => Promise<void>;
     createNewSubcategory: (categoryId: string, name: string) => Promise<void>;
     deleteCategory: (categoryId: string) => Promise<void>;
+    deleteSubcategory: (categoryId: string, subCategoryId: string) => Promise<void>;
+    deleteNote: (noteId: string) => Promise<void>;
     setActiveNoteData: (data: MindMapData) => void;
     activeNoteData: MindMapData | null;
     updateUserConfig: (config: Partial<UserConfig>) => Promise<void>;

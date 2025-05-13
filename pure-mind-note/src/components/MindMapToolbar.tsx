@@ -2,17 +2,33 @@ import React from 'react';
 import './MindMapEditor.css';
 
 interface MindMapToolbarProps {
+  toggleToolbar: () => void;
+  toolbarVisible: boolean;
   activeNodes: any[];
   hasGeneralization: boolean;
+  hasRoot: boolean;
+  onInsertImage: () => void;
+  onInsertIcon: () => void;
+  onInsertLink: () => void;
   onInsertNote: () => void;
   onInsertTag: () => void;
+  onAddGeneralization: () => void;
+  onCreateAssociativeLine: () => void;
 }
 
 const MindMapToolbar: React.FC<MindMapToolbarProps> = ({
+  toggleToolbar,
+  toolbarVisible,
   activeNodes,
   hasGeneralization,
+  hasRoot,
+  onInsertImage,
+  onInsertIcon,
+  onInsertLink,
   onInsertNote,
   onInsertTag,
+  onAddGeneralization,
+  onCreateAssociativeLine
 }) => {
   // 安全的按钮点击处理函数
   const safeOnClick = (handler: () => void) => (e: React.MouseEvent) => {

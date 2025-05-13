@@ -1,7 +1,7 @@
 /**
  * 节点标签时间插件的类型定义
  */
-declare class NodeCreationTimePlugin {
+declare class TagCreationTimePlugin {
   static instanceName: string;
   
   private mindMap: any;
@@ -45,4 +45,4 @@ declare class NodeCreationTimePlugin {
   beforePluginDestroy(): void;
 }
 
-export default NodeCreationTimePlugin; 
+export default TagCreationTimePlugin; 

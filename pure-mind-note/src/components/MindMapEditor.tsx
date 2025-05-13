@@ -227,20 +227,6 @@ const MindMapEditor: React.FC = () => {
         window._mindMap = mindMapInstanceRef.current;
       }
 
-      // 注册标签删除插件
-      if (mindMapInstanceRef.current) {
-        try {
-          mindMapInstanceRef.current.addPlugin(TagDeletePlugin);
-          console.log('标签删除插件注册成功');
-          
-          // 注册节点创建时间插件
-          mindMapInstanceRef.current.addPlugin(NodeCreationTimePlugin);
-          console.log('节点创建时间插件注册成功');
-        } catch (e) {
-          console.error('插件注册失败:', e);
-        }
-      }
-
       // 初始化上次保存的数据
       lastSavedDataRef.current = JSON.parse(JSON.stringify(activeNoteData.data));
       

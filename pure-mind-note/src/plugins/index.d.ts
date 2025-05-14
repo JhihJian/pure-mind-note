@@ -1,2 +1,3 @@
 import TagDeletePlugin from './TagDeletePlugin';
-export { TagDeletePlugin };
+import TagCreationTimePlugin from './TagCreationTimePlugin';
+export { TagDeletePlugin, TagCreationTimePlugin };

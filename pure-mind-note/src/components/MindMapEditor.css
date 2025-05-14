@@ -361,3 +361,14 @@
 .data-debug-enabled .debug-panel {
   display: block;
 }
+
+.app-version {
+  position: fixed;
+  right: 16px;
+  bottom: 8px;
+  text-align: right;
+  color: #888;
+  font-size: 12px;
+  margin-top: 0;
+  z-index: 1100;
+}

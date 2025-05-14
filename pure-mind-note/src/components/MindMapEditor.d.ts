@@ -1,4 +1,3 @@
-import React from 'react';
 import './MindMapEditor.css';
 declare global {
     interface Window {
@@ -10,5 +9,4 @@ declare global {
         _mindMap?: any;
     }
 }
-declare const MindMapEditor: React.FC;
-export default MindMapEditor;
+export default function MindMapEditorWithVersion(): import("react/jsx-runtime").JSX.Element;

@@ -33,6 +33,9 @@ declare global {
   }
 }
 
+// 声明全局常量__APP_VERSION__
+declare const __APP_VERSION__: string;
+
 // 状态反馈组件
 interface StatusBarProps {
   isLoading: boolean;
@@ -762,4 +765,18 @@ if (typeof window !== 'undefined') {
   window.PureMindNote = window.PureMindNote || {};
 }
 
-export default MindMapEditor;
+// 版本号显示组件
+const AppVersion: React.FC = () => (
+  <div className="app-version" style={{ textAlign: 'center', color: '#888', fontSize: 12, marginTop: 8 }}>
+    版本号：{typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : 'dev'}
+  </div>
+);
+
+export default function MindMapEditorWithVersion() {
+  return (
+    <>
+      <MindMapEditor />
+      <AppVersion />
+    </>
+  );
+}

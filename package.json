@@ -1,8 +1,0 @@
-{
-  "overrides": {
-    "esbuild": "^0.25.4"
-  },
-  "dependencies": {
-    "simple-mind-map-plugin-themes": "^1.0.1"
-  }
-}

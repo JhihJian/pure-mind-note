@@ -14,6 +14,7 @@ export interface Category {
   id: string;
   name: string;
   subCategories: SubCategory[];
+  createdTime?: string;
 }
 
 // 子分类类型
@@ -21,6 +22,7 @@ export interface SubCategory {
   id: string;
   name: string;
   parentId: string;
+  createdTime?: string;
 }
 
 // 脑图数据类型

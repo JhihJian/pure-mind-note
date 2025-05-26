@@ -11,11 +11,13 @@ export interface Category {
     id: string;
     name: string;
     subCategories: SubCategory[];
+    createdTime?: string;
 }
 export interface SubCategory {
     id: string;
     name: string;
     parentId: string;
+    createdTime?: string;
 }
 export interface MindMapData {
     id: string;

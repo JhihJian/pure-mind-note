@@ -2,8 +2,11 @@
 .view-selector {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-right: 20px;
+  gap: 8px;
+  margin-right: 15px;
+  flex-shrink: 1; /* 允许收缩 */
+  min-width: 0; /* 允许内部元素收缩 */
+  overflow: hidden; /* 防止溢出 */
 }
 
 /* 视图按钮 */
@@ -16,6 +19,9 @@
   border-radius: 4px;
   cursor: pointer;
   transition: all 0.2s ease;
+  white-space: nowrap; /* 防止文本换行 */
+  flex-shrink: 0; /* 防止按钮被压缩变形 */
+  min-width: 0; /* 允许内容收缩 */
 }
 
 .view-button:hover {
@@ -31,15 +37,108 @@
 /* 图标样式 */
 .view-button .icon {
   margin-right: 5px;
+  flex-shrink: 0; /* 图标不收缩 */
+}
+
+.view-button .text {
+  flex-shrink: 1; /* 文本可以收缩 */
+  min-width: 0;
 }
 
 /* 响应式调整 */
+@media (max-width: 1200px) {
+  .view-selector {
+    gap: 6px;
+    margin-right: 10px;
+  }
+  
+  .view-button {
+    padding: 5px 10px;
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 900px) {
+  .view-selector {
+    gap: 4px;
+    margin-right: 8px;
+  }
+  
+  .view-button {
+    padding: 4px 8px;
+    font-size: 0.85rem;
+  }
+  
+  .view-button .icon {
+    margin-right: 3px;
+  }
+}
+
 @media (max-width: 768px) {
+  .view-selector {
+    gap: 3px;
+    margin-right: 5px;
+  }
+  
+  .view-button {
+    padding: 4px 6px;
+    min-width: 32px; /* 确保图标按钮有最小宽度 */
+  }
+  
   .view-button .text {
     display: none;
   }
   
   .view-button .icon {
     margin-right: 0;
+  }
+}
+
+@media (max-width: 600px) {
+  .view-selector {
+    gap: 2px;
+    margin-right: 3px;
+  }
+  
+  .view-button {
+    padding: 3px 5px;
+    min-width: 28px;
+    font-size: 0.8rem;
+  }
+}
+
+/* 极小窗口优化 - 只显示当前激活的按钮和最重要的几个 */
+@media (max-width: 480px) {
+  .view-selector {
+    gap: 1px;
+    margin-right: 2px;
+    max-width: 150px; /* 限制最大宽度 */
+  }
+  
+  .view-button {
+    padding: 2px 4px;
+    min-width: 24px;
+    font-size: 0.75rem;
+  }
+  
+  /* 在极小窗口下隐藏不太重要的按钮 */
+  .view-button:not(.active):nth-child(n+4) {
+    display: none;
+  }
+}
+
+@media (max-width: 360px) {
+  .view-selector {
+    max-width: 100px;
+  }
+  
+  .view-button {
+    min-width: 20px;
+    padding: 1px 3px;
+  }
+  
+  /* 只显示激活的按钮和脑图视图按钮 */
+  .view-button:not(.active):not(:first-child) {
+    display: none;
   }
 } 

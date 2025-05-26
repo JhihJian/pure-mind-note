@@ -11,12 +11,16 @@ import './MindMapEditor.css';
 import Drag from 'simple-mind-map/src/plugins/Drag.js'
 // @ts-ignore
 import Themes from 'simple-mind-map-plugin-themes';
+// @ts-ignore
+import NodeImgAdjust from 'simple-mind-map/src/plugins/NodeImgAdjust.js'
+
 
 // 注册主题插件
 Themes.init(MindMap);
-
 MindMap.usePlugin(Drag)
 MindMap.usePlugin(TagCreationTimePlugin)
+//该插件提供拖拽调整节点内图片大小的功能
+MindMap.usePlugin(NodeImgAdjust)
 // 常量定义
 const SIDEBAR_WIDTH = 280; // 侧边栏宽度
 const HEADER_HEIGHT = 60; // 头部高度
@@ -90,18 +94,28 @@ const MindMapEditor: React.FC = () => {
   const saveData = useCallback(() => {
     const currentData = mindMapInstanceRef.current.getData();
     //直接使用从useAppContext获取的保存函数
-    if (activeNoteData) {
+    if (activeNoteData && activeNote) {
+      // 使用activeNote中的正确ID和标题，而不是activeNoteData中可能过时的信息
       saveCurrentNote({
         ...activeNoteData,
+        id: activeNote.id,  // 使用正确的笔记ID
+        title: activeNote.title,  // 使用正确的笔记标题
         data: currentData
       });
       showFeedback('保存成功');
     }
-  }, [activeNoteData, saveCurrentNote, showFeedback]); 
+  }, [activeNoteData, activeNote, saveCurrentNote, showFeedback]); 
 
   // 创建思维导图实例
   const createMindMapInstance = useCallback(() => {
     if (!mindMapContainerRef.current || !activeNoteData) return false;
+    
+    console.log('[MindMapEditor] 创建思维导图实例，使用数据:', {
+      id: activeNoteData.id,
+      title: activeNoteData.title,
+      dataKeys: Object.keys(activeNoteData.data || {}),
+      rootText: activeNoteData.data?.root?.data?.text
+    });
     
     try {
       // 自定义节点渲染函数，用于支持显示标签
@@ -234,7 +248,15 @@ const MindMapEditor: React.FC = () => {
       lastSavedDataRef.current = JSON.parse(JSON.stringify(activeNoteData.data));
       
       // 添加事件监听器
+      let isInitializing = true;
       mindMapInstanceRef.current.on('data_change', () => {
+        // 跳过初始化时的数据变化事件，避免立即保存空笔记
+        if (isInitializing) {
+          console.log('[MindMapEditor] 跳过初始化时的数据变化事件');
+          return;
+        }
+        
+        console.log('[MindMapEditor] 数据变化，触发保存');
         // 在数据变化时触发保存
         saveData();
         
@@ -250,6 +272,12 @@ const MindMapEditor: React.FC = () => {
           }
         }, 100);
       });
+      
+      // 延迟一段时间后允许保存，避免初始化时的误触发
+      setTimeout(() => {
+        isInitializing = false;
+        console.log('[MindMapEditor] 初始化完成，允许自动保存');
+      }, 1000);
       
       // 添加节点选择事件监听
       try {
@@ -327,12 +355,11 @@ const MindMapEditor: React.FC = () => {
     }
   }, [activeNoteData, saveData]);
 
-  // 获取当前打开的文件名
-  const getCurrentFileName = useCallback(() => {
-    if (!activeNoteData) return null;
-    // @ts-ignore
-    return activeNoteData.filename || activeNoteData.name || activeNoteData.title || activeNoteData.id || null;
-  }, [activeNoteData]);
+  // 获取当前打开的笔记标识符
+  const getCurrentNoteIdentifier = useCallback(() => {
+    // 使用activeNote的ID作为唯一标识符，这样不同目录下的同名文件会有不同的ID
+    return activeNote?.id || null;
+  }, [activeNote?.id]);
 
   // 添加一个简单的延迟执行函数
   const delayForceNodeSelection = useCallback(() => {
@@ -378,87 +405,67 @@ const MindMapEditor: React.FC = () => {
     }, 800);
   }, []);
   
-  // 处理首次加载
+  // 处理activeNote变化时的重新初始化
   useEffect(() => {
-    // 如果已经初始化过，不再重复初始化
-    if (isInitialized) return;
+    // 如果没有activeNote或activeNoteData，清理状态
+    if (!activeNote || !activeNoteData) {
+      if (mindMapInstanceRef.current) {
+        try {
+          mindMapInstanceRef.current.off('data_change');
+          mindMapInstanceRef.current.destroy();
+          mindMapInstanceRef.current = null;
+        } catch (error) {
+          console.error('清理思维导图实例失败:', error);
+        }
+      }
+      setIsInitialized(false);
+      prevFileNameRef.current = null;
+      return;
+    }
+
+    // 确保activeNoteData不为null且有有效数据
+    if (!activeNoteData.data || !activeNoteData.id) {
+      console.log('等待有效的笔记数据...');
+      return;
+    }
+
+    // 检查是否需要重新创建实例
+    const currentNoteId = getCurrentNoteIdentifier();
+    const shouldRecreate = currentNoteId !== prevFileNameRef.current;
     
-    // 检查是否有数据可以初始化
-    if (activeNoteData && mindMapContainerRef.current && !mindMapInstanceRef.current) {
+    if (shouldRecreate || !mindMapInstanceRef.current) {
       setIsLoading(true);
       
-      // 创建实例
-      const success = createMindMapInstance();
-      console.log('思维导图实例创建结果:', success);
-      
-      // 标记为已初始化
-      setIsInitialized(true);
-      setIsLoading(false);
-      
-      // 记录当前文件名
-      prevFileNameRef.current = getCurrentFileName();
-
-      // 延迟执行节点选择
-      delayForceNodeSelection();
-    }
-  }, [activeNoteData, createMindMapInstance, isInitialized, getCurrentFileName, delayForceNodeSelection]);
-
-  // 监听文件变化，在需要时创建或销毁实例
-  useEffect(() => {
-    // 如果没有容器，则不创建实例
-    if (!mindMapContainerRef.current) return;
-    
-    const currentFileName = getCurrentFileName();
-    const previousFileName = prevFileNameRef.current;
-    
-    // 更新之前的文件名
-    prevFileNameRef.current = currentFileName;
-    
-    // 只有在文件名变化时才需要销毁和创建实例
-    if (currentFileName === previousFileName && mindMapInstanceRef.current) {
-      return;
-    }
-    
-    // 标记为加载中
-    setIsLoading(true);
-    
-    // 如果已有实例，则先销毁
-    if (mindMapInstanceRef.current) {
-      try {
-        // 移除事件监听器
-        mindMapInstanceRef.current.off('data_change');
-        
-        // 销毁实例
-        mindMapInstanceRef.current.destroy();
-      } catch (error) {
-        console.error('销毁思维导图实例失败:', error);
+      // 如果已有实例，先销毁
+      if (mindMapInstanceRef.current) {
+        try {
+          mindMapInstanceRef.current.off('data_change');
+          mindMapInstanceRef.current.destroy();
+          mindMapInstanceRef.current = null;
+        } catch (error) {
+          console.error('销毁思维导图实例失败:', error);
+        }
       }
       
-      // 清空引用
-      mindMapInstanceRef.current = null;
-    }
-    
-    // 如果没有活动笔记，则不创建新实例
-    if (!activeNoteData) {
+      // 检查是否有容器可以创建实例
+      if (mindMapContainerRef.current) {
+        // 创建实例
+        const success = createMindMapInstance();
+        console.log('思维导图实例创建结果:', success, '笔记ID:', currentNoteId);
+        
+        // 更新状态
+        setIsInitialized(true);
+        prevFileNameRef.current = currentNoteId;
+        
+        // 延迟执行节点选择
+        delayForceNodeSelection();
+      }
+      
       setIsLoading(false);
-      return;
     }
-    
-    // 创建新实例
-    createMindMapInstance();
-    setIsLoading(false);
-    
-  }, [
-    // @ts-ignore
-    activeNoteData?.filename, 
-    // @ts-ignore
-    activeNoteData?.name, 
-    // @ts-ignore
-    activeNoteData?.title, 
-    activeNoteData?.id, 
-    createMindMapInstance, 
-    getCurrentFileName
-  ]);
+  }, [activeNote?.id, activeNoteData, createMindMapInstance, getCurrentNoteIdentifier, delayForceNodeSelection]);
+
+
 
   // 清理副作用
   useEffect(() => {
@@ -485,13 +492,13 @@ const MindMapEditor: React.FC = () => {
       hasInstance: !!mindMapInstanceRef.current,
       hasContainer: !!mindMapContainerRef.current,
       activeNoteId: memoizedActiveNote?.id,
-      currentFileName: getCurrentFileName(),
-      prevFileName: prevFileNameRef.current,
+      currentNoteId: getCurrentNoteIdentifier(),
+      prevNoteId: prevFileNameRef.current,
       isInitialized,
       hasData: !!activeNoteData,
       memoizedActiveNoteId: memoizedActiveNote?.id
     });
-  }, [memoizedActiveNote?.id, isInitialized, activeNoteData, getCurrentFileName]);
+  }, [memoizedActiveNote?.id, isInitialized, activeNoteData, getCurrentNoteIdentifier]);
 
   // 添加窗口大小变化监听
   useEffect(() => {

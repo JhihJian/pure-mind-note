@@ -158,10 +158,12 @@ export async function getAllCategories(): Promise<Category[]> {
       const categories: Category[] = rawCategories.map(cat => ({
         id: cat.id,
         name: cat.name,
+        createdTime: cat.created_time,
         subCategories: (cat.sub_categories || []).map((sub: any) => ({
           id: sub.id,
           name: sub.name,
-          parentId: cat.id
+          parentId: cat.id,
+          createdTime: sub.created_time
         }))
       }));
       
@@ -180,10 +182,17 @@ export async function getAllCategories(): Promise<Category[]> {
 // 读取笔记
 export async function readNote(path: string): Promise<MindMapData> {
   try {
+    console.log('[FileService] 开始读取笔记文件:', path);
     const content = await invoke('read_note', { path }) as string;
-    return JSON.parse(content);
+    const data = JSON.parse(content);
+    console.log('[FileService] 笔记文件读取成功:', {
+      id: data.id,
+      title: data.title,
+      contentLength: content.length
+    });
+    return data;
   } catch (error) {
-    console.error('读取笔记失败:', error);
+    console.error('[FileService] 读取笔记失败:', error);
     throw new Error(`无法读取笔记: ${error}`);
   }
 }
@@ -191,10 +200,16 @@ export async function readNote(path: string): Promise<MindMapData> {
 // 保存笔记
 export async function saveNote(path: string, data: MindMapData): Promise<void> {
   try {
+    console.log('[FileService] 开始保存笔记:', {
+      path,
+      id: data.id,
+      title: data.title
+    });
     const content = JSON.stringify(data, null, 2);
     await invoke('save_note', { path, content });
+    console.log('[FileService] 笔记保存成功:', path);
   } catch (error) {
-    console.error('保存笔记失败:', error);
+    console.error('[FileService] 保存笔记失败:', error);
     throw new Error(`无法保存笔记: ${error}`);
   }
 }
@@ -213,11 +228,14 @@ interface BackendNote {
 export async function getAllNotes(): Promise<NoteMetadata[]> {
   try {
     const dataDir = await getDataDir();
+    console.log('[FileService] 开始获取笔记列表，数据目录:', dataDir);
+    
     try {
       const notes = await invoke('get_all_notes', { dataDir }) as BackendNote[];
+      console.log('[FileService] 后端返回笔记数据:', notes.length, '个');
       
       // 将后端返回的数据转换为前端类型
-      return notes.map((note: BackendNote) => ({
+      const result = notes.map((note: BackendNote) => ({
         id: note.id,
         title: note.title,
         path: note.path,
@@ -226,12 +244,15 @@ export async function getAllNotes(): Promise<NoteMetadata[]> {
         lastUpdated: note.last_updated,
         type: NotebookType.MINDMAP  // 默认设置为思维导图类型
       }));
+      
+      console.log('[FileService] 笔记列表转换完成:', result.length, '个');
+      return result;
     } catch (error) {
-      console.warn('获取笔记列表失败，可能在开发环境中:', error);
+      console.warn('[FileService] 获取笔记列表失败，可能在开发环境中:', error);
       return []; // 返回空数组，表示没有笔记
     }
   } catch (error) {
-    console.error('获取笔记列表失败:', error);
+    console.error('[FileService] 获取笔记列表失败:', error);
     return [];
   }
 }
@@ -243,8 +264,20 @@ export async function createNote(
   subCategoryId?: string
 ): Promise<NoteMetadata> {
   try {
+    console.log('[FileService] 开始创建笔记:', {
+      title,
+      categoryId,
+      subCategoryId
+    });
+    
     const dataDir = await getDataDir();
-    const id = Date.now().toString();
+    
+    // 生成与后端一致的唯一ID格式
+    const id = subCategoryId 
+      ? `${categoryId}#${subCategoryId}#${title}`
+      : `${categoryId}##${title}`;
+    
+    console.log('[FileService] 生成笔记ID:', id);
     
     // 构建文件路径
     let notePath: string;
@@ -253,6 +286,8 @@ export async function createNote(
     } else {
       notePath = `${dataDir}/${categoryId}/${title}.json`;
     }
+    
+    console.log('[FileService] 笔记文件路径:', notePath);
     
     // 创建初始思维导图数据
     const initialData: MindMapData = {
@@ -270,11 +305,17 @@ export async function createNote(
       }
     };
     
+    console.log('[FileService] 创建初始数据:', {
+      id: initialData.id,
+      title: initialData.title,
+      rootId: initialData.rootId
+    });
+    
     // 保存新笔记
     await saveNote(notePath, initialData);
     
     // 返回笔记元数据
-    return {
+    const metadata = {
       id,
       title,
       path: notePath,
@@ -283,8 +324,11 @@ export async function createNote(
       lastUpdated: initialData.lastUpdated,
       type: NotebookType.MINDMAP  // 设置默认类型为思维导图
     };
+    
+    console.log('[FileService] 笔记创建完成:', metadata);
+    return metadata;
   } catch (error) {
-    console.error('创建笔记失败:', error);
+    console.error('[FileService] 创建笔记失败:', error);
     throw new Error(`无法创建笔记: ${error}`);
   }
 }

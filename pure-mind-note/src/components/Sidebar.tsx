@@ -99,7 +99,19 @@ const Sidebar: React.FC = () => {
   const handleAddNote = () => {
     if (!newNoteName.trim() || !currentAddParentId) return;
     
-    createNewNote(newNoteName, selectedCategoryId || currentAddParentId, currentAddParentId);
+    // 根据上下文菜单的类型来判断是在分类下还是子分类下创建笔记
+    // 如果currentAddParentId是子分类ID，需要找到对应的分类ID
+    const category = categories.find(cat => 
+      cat.subCategories.some(sub => sub.id === currentAddParentId)
+    );
+    
+    if (category) {
+      // 在子分类下创建笔记
+      createNewNote(newNoteName, category.id, currentAddParentId);
+    } else {
+      // 在分类下直接创建笔记
+      createNewNote(newNoteName, currentAddParentId, undefined);
+    }
     setNewNoteName('');
     setShowAddNoteForm(false);
     setCurrentAddParentId(null);
@@ -293,6 +305,25 @@ const Sidebar: React.FC = () => {
                 
                 {expandedCategories[category.id] && (
                   <div className="category-content">
+                    {/* 分类下的直接笔记 */}
+                    <div className="notes-list">
+                      {getFilteredNotes(category.id, null).filter(note => !note.subCategoryId).map(note => (
+                        <div 
+                          key={note.id} 
+                          className={`note-item ${activeNote?.id === note.id ? 'active' : ''}`}
+                          onClick={() => handleOpenNote(note.id)}
+                          onContextMenu={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleContextMenu(e, 'note', note.id);
+                          }}
+                        >
+                          <span className="note-icon">📝</span>
+                          <span className="note-title">{note.title}</span>
+                        </div>
+                      ))}
+                    </div>
+                    
                     {/* 子分类 */}
                     {category.subCategories.map(subCategory => (
                       <div key={subCategory.id} className="subcategory">
@@ -459,13 +490,20 @@ const Sidebar: React.FC = () => {
           <div className="form-content">
             <p className="form-info">
               {(() => {
-                const category = categories.find(c => c.id === selectedCategoryId);
-                if (!category) return '';
+                // 首先检查currentAddParentId是否是子分类ID
+                const parentCategory = categories.find(cat => 
+                  cat.subCategories.some(sub => sub.id === currentAddParentId)
+                );
                 
-                const subCategory = category.subCategories.find(s => s.id === currentAddParentId);
-                if (!subCategory) return '';
-                
-                return `分类: ${category.name} > ${subCategory.name}`;
+                if (parentCategory) {
+                  // 在子分类下创建笔记
+                  const subCategory = parentCategory.subCategories.find(s => s.id === currentAddParentId);
+                  return `分类: ${parentCategory.name} > ${subCategory?.name}`;
+                } else {
+                  // 在分类下直接创建笔记
+                  const category = categories.find(c => c.id === currentAddParentId);
+                  return category ? `分类: ${category.name}` : '';
+                }
               })()}
             </p>
             <input

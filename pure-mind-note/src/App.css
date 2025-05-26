@@ -31,6 +31,7 @@
   height: 60px;
   border-bottom: 1px solid var(--border-color);
   background-color: var(--background-color);
+  min-width: 0; /* 允许flex子元素收缩 */
 }
 
 /* 应用标题栏右侧区域 */
@@ -38,6 +39,8 @@
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-shrink: 0; /* 防止右侧区域被压缩 */
+  min-width: 0; /* 允许内部元素收缩 */
 }
 
 .app-header h1 {
@@ -45,6 +48,83 @@
   font-size: 1.3rem;
   font-weight: 600;
   color: var(--text-color);
+  flex-shrink: 1; /* 允许标题在必要时收缩 */
+  min-width: 0; /* 允许文本截断 */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 响应式调整 */
+@media (max-width: 1200px) {
+  .app-header {
+    padding: 0 15px;
+  }
+  
+  .app-header h1 {
+    font-size: 1.2rem;
+  }
+}
+
+@media (max-width: 900px) {
+  .app-header {
+    padding: 0 10px;
+  }
+  
+  .app-header h1 {
+    font-size: 1.1rem;
+  }
+  
+  .app-header-right {
+    gap: 8px;
+  }
+}
+
+@media (max-width: 768px) {
+  .app-header {
+    padding: 0 8px;
+  }
+  
+  .app-header h1 {
+    font-size: 1rem;
+    max-width: 120px; /* 限制标题最大宽度 */
+  }
+  
+  .app-header-right {
+    gap: 5px;
+  }
+}
+
+@media (max-width: 480px) {
+  .app-header {
+    padding: 0 5px;
+    height: 50px; /* 减少头部高度 */
+  }
+  
+  .app-header h1 {
+    font-size: 0.9rem;
+    max-width: 80px;
+  }
+  
+  .app-header-right {
+    gap: 3px;
+  }
+}
+
+@media (max-width: 360px) {
+  .app-header {
+    padding: 0 3px;
+    height: 45px;
+  }
+  
+  .app-header h1 {
+    font-size: 0.85rem;
+    max-width: 60px;
+  }
+  
+  .app-header-right {
+    gap: 2px;
+  }
 }
 
 /* 设置按钮 */
@@ -59,6 +139,7 @@
   border-radius: 50%;
   cursor: pointer;
   transition: background-color 0.2s;
+  flex-shrink: 0; /* 防止设置按钮被压缩 */
 }
 
 .settings-button:hover {
@@ -67,6 +148,29 @@
 
 .settings-button .icon {
   font-size: 20px;
+}
+
+/* 设置按钮响应式调整 */
+@media (max-width: 900px) {
+  .settings-button {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .settings-button .icon {
+    font-size: 18px;
+  }
+}
+
+@media (max-width: 768px) {
+  .settings-button {
+    width: 28px;
+    height: 28px;
+  }
+  
+  .settings-button .icon {
+    font-size: 16px;
+  }
 }
 
 /* 针对浅色主题（默认） */

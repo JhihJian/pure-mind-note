@@ -121,6 +121,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   // 加载所有笔记
   const loadNotes = async (): Promise<void> => {
     try {
+      console.log('[前端] 开始加载笔记列表');
       // 获取所有笔记
       const notes = await FileService.getAllNotes();
       
@@ -129,9 +130,18 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         notes
       }));
       
-      console.log('笔记加载完成:', notes);
+      console.log('[前端] 笔记加载完成，共', notes.length, '个笔记');
+      notes.forEach(note => {
+        console.log('[前端] 笔记:', {
+          id: note.id,
+          title: note.title,
+          categoryId: note.categoryId,
+          subCategoryId: note.subCategoryId,
+          path: note.path
+        });
+      });
     } catch (error) {
-      console.error('加载笔记失败:', error);
+      console.error('[前端] 加载笔记失败:', error);
     }
   };
   
@@ -142,7 +152,28 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     subCategoryId?: string
   ): Promise<void> => {
     try {
+      console.log('[前端] 开始创建新笔记:', {
+        title,
+        categoryId,
+        subCategoryId
+      });
+      
       const newNote = await FileService.createNote(title, categoryId, subCategoryId);
+      
+      console.log('[前端] 新笔记创建成功:', {
+        id: newNote.id,
+        title: newNote.title,
+        path: newNote.path,
+        categoryId: newNote.categoryId,
+        subCategoryId: newNote.subCategoryId
+      });
+      
+      // 先清空当前笔记数据，避免使用旧数据
+      setActiveNoteData(null);
+      
+      // 读取新创建的笔记内容
+      console.log('[前端] 读取新创建的笔记内容');
+      const noteData = await FileService.readNote(newNote.path);
       
       // 更新状态
       setState(prevState => ({
@@ -151,38 +182,76 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         activeNote: newNote
       }));
       
-      // 读取新创建的笔记内容
-      const noteData = await FileService.readNote(newNote.path);
+      // 设置笔记数据
       setActiveNoteData(noteData);
+      console.log('[前端] 新笔记创建并打开完成');
     } catch (error) {
-      console.error('创建笔记失败:', error);
+      console.error('[前端] 创建笔记失败:', error);
     }
   };
   
   // 打开笔记
   const openNote = async (noteId: string): Promise<void> => {
     try {
+      console.log('[前端] 开始打开笔记，ID:', noteId);
       const noteToOpen = state.notes.find(note => note.id === noteId);
       
       if (noteToOpen) {
+        console.log('[前端] 找到目标笔记:', {
+          id: noteToOpen.id,
+          title: noteToOpen.title,
+          path: noteToOpen.path,
+          categoryId: noteToOpen.categoryId,
+          subCategoryId: noteToOpen.subCategoryId
+        });
+        
+        // 先清空当前笔记数据，避免使用旧数据
+        setActiveNoteData(null);
+        
+        // 读取笔记内容
+        console.log('[前端] 开始读取笔记文件:', noteToOpen.path);
+        const noteData = await FileService.readNote(noteToOpen.path);
+        
+        console.log('[前端] 成功读取笔记数据:', {
+          id: noteData.id,
+          title: noteData.title,
+          rootId: noteData.rootId,
+          dataKeys: Object.keys(noteData.data || {}),
+          lastUpdated: noteData.lastUpdated
+        });
+        
+        // 更新状态
         setState(prevState => ({
           ...prevState,
           activeNote: noteToOpen
         }));
         
-        // 读取笔记内容
-        const noteData = await FileService.readNote(noteToOpen.path);
+        // 设置笔记数据
         setActiveNoteData(noteData);
+        console.log('[前端] 笔记打开完成');
+      } else {
+        console.warn('[前端] 未找到指定ID的笔记:', noteId);
       }
     } catch (error) {
-      console.error('打开笔记失败:', error);
+      console.error('[前端] 打开笔记失败:', error);
     }
   };
   
   // 保存当前笔记
   const saveCurrentNote = async (data: MindMapData): Promise<void> => {
     try {
-      if (!state.activeNote) return;
+      if (!state.activeNote) {
+        console.warn('[前端] 没有活动笔记，无法保存');
+        return;
+      }
+      
+      console.log('[前端] 开始保存笔记:', {
+        activeNoteId: state.activeNote.id,
+        activeNotePath: state.activeNote.path,
+        dataId: data.id,
+        dataTitle: data.title,
+        dataKeys: Object.keys(data.data || {})
+      });
       
       // 更新时间戳
       const updatedData = {
@@ -192,6 +261,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       
       // 保存到文件
       await FileService.saveNote(state.activeNote.path, updatedData);
+      console.log('[前端] 文件保存成功');
       
       // 更新状态
       setActiveNoteData(updatedData);
@@ -205,8 +275,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             : note
         )
       }));
+      
+      console.log('[前端] 笔记保存完成');
     } catch (error) {
-      console.error('保存笔记失败:', error);
+      console.error('[前端] 保存笔记失败:', error);
     }
   };
   
